@@ -391,6 +391,117 @@ require_once __DIR__ . '/header.php';
     }
     .footer-bottom span { color: rgba(200,151,42,0.45); }
 
+    /* ─── DISCORD WIDGET ARCANIC ────────────────────────────────── */
+    .discord-section {
+        position: relative; z-index: 10;
+        padding: 5rem 2rem; overflow: hidden;
+    }
+    .discord-section::before {
+        content: ''; position: absolute; inset: 0;
+        background: radial-gradient(ellipse 60% 70% at 50% 50%, rgba(88,101,242,0.07) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .discord-inner { max-width: 820px; margin: 0 auto; position: relative; z-index: 2; }
+    .discord-header {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.8rem;
+    }
+    .discord-title-block h2 {
+        font-family: 'Cinzel Decorative', serif;
+        font-size: clamp(1.2rem, 3vw, 1.8rem); color: var(--white); margin-bottom: 0.35rem;
+    }
+    .discord-title-block h2 span { color: #5865f2; }
+    .discord-title-block p { font-size: 0.88rem; color: var(--silver); opacity: 0.75; }
+    .discord-join-link {
+        font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.2em;
+        text-transform: uppercase; color: #8087ff; text-decoration: none;
+        transition: color 0.3s, text-shadow 0.3s; white-space: nowrap; padding-top: 0.3rem;
+    }
+    .discord-join-link:hover { color: var(--arcane-bright); text-shadow: 0 0 10px rgba(136,144,255,0.5); }
+    .discord-card {
+        background: rgba(30,31,60,0.85);
+        border: 1px solid rgba(88,101,242,0.22); border-radius: 10px;
+        padding: 1.5rem 1.8rem; backdrop-filter: blur(14px);
+        box-shadow: 0 0 40px rgba(88,101,242,0.08), inset 0 0 30px rgba(88,101,242,0.04);
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .discord-card:hover {
+        border-color: rgba(88,101,242,0.4);
+        box-shadow: 0 0 60px rgba(88,101,242,0.14), inset 0 0 30px rgba(88,101,242,0.06);
+    }
+    .discord-label {
+        font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.25em;
+        text-transform: uppercase; color: #5865f2; margin-bottom: 0.8rem;
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .discord-label svg { width: 14px; height: 14px; fill: #5865f2; }
+    .discord-card-top { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+    .discord-server-icon {
+        width: 54px; height: 54px; border-radius: 50%;
+        background: linear-gradient(135deg, #5865f2 0%, #3a42c5 100%);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; flex-shrink: 0; box-shadow: 0 0 20px rgba(88,101,242,0.4);
+        overflow: hidden;
+    }
+    .discord-server-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .discord-server-info { flex: 1; }
+    .discord-server-name {
+        font-family: 'Cinzel', serif; font-size: 1rem;
+        color: var(--white); margin-bottom: 0.2rem; letter-spacing: 0.05em;
+    }
+    .discord-server-desc { font-size: 0.8rem; color: var(--silver); opacity: 0.65; margin-bottom: 0.4rem; }
+    .discord-online-badge {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: 0.12em;
+        color: var(--success); background: rgba(95,255,176,0.08);
+        border: 1px solid rgba(95,255,176,0.2); border-radius: 20px; padding: 0.22rem 0.7rem;
+    }
+    .discord-online-badge-top {
+        display: flex; align-items: center; gap: 0.4rem;
+        font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: 0.12em;
+        color: var(--success); background: rgba(95,255,176,0.08);
+        border: 1px solid rgba(95,255,176,0.2); border-radius: 20px;
+        padding: 0.25rem 0.75rem; white-space: nowrap; margin-left: auto;
+    }
+    .discord-online-dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: var(--success); box-shadow: 0 0 8px rgba(95,255,176,0.9);
+        animation: dotBlink 2s ease-in-out infinite;
+    }
+    .discord-sep { height: 1px; background: linear-gradient(90deg, transparent, rgba(88,101,242,0.25), transparent); margin: 1.2rem 0; }
+    .discord-members-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.2rem; min-height: 2rem; }
+    .discord-member-chip {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        font-size: 0.75rem; color: var(--silver);
+        background: rgba(136,144,255,0.06); border: 1px solid rgba(136,144,255,0.1);
+        border-radius: 20px; padding: 0.18rem 0.6rem; opacity: 0.85;
+    }
+    .discord-member-avatar {
+        width: 18px; height: 18px; border-radius: 50%;
+        background: linear-gradient(135deg, rgba(88,101,242,0.6), rgba(136,144,255,0.4));
+        font-size: 0.6rem; display: flex; align-items: center; justify-content: center;
+        color: var(--white); flex-shrink: 0;
+    }
+    .discord-member-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 5px rgba(95,255,176,0.8); flex-shrink: 0; }
+    .discord-members-empty { font-size: 0.8rem; color: var(--silver); opacity: 0.45; font-style: italic; }
+    .discord-cta-btn {
+        display: block; width: 100%; text-align: center;
+        font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.2em;
+        text-transform: uppercase; color: var(--white);
+        background: linear-gradient(135deg, #5865f2 0%, #3a42c5 100%);
+        border: none; border-radius: 6px; padding: 0.9rem 1rem;
+        text-decoration: none; cursor: pointer;
+        transition: filter 0.3s, box-shadow 0.3s, transform 0.2s;
+        box-shadow: 0 4px 20px rgba(88,101,242,0.35);
+    }
+    .discord-cta-btn:hover { filter: brightness(1.12); box-shadow: 0 6px 30px rgba(88,101,242,0.55); transform: translateY(-1px); }
+    .discord-error { font-size: 0.82rem; color: rgba(168,180,208,0.45); font-style: italic; text-align: center; padding: 1rem 0; }
+    @media (max-width: 640px) {
+        .discord-section { padding: 3.5rem 1rem; }
+        .discord-card { padding: 1.2rem 1.2rem; }
+        .discord-header { flex-direction: column; }
+    }
+
     @media (max-width: 768px) {
         .hero-stats { max-width: 100%; clip-path: none; }
         .stat-item::after { display: none; }
@@ -525,6 +636,54 @@ require_once __DIR__ . '/header.php';
     </div>
 </div>
 
+<!-- DISCORD WIDGET -->
+<div class="discord-section reveal">
+    <div class="discord-inner">
+        <div class="discord-header">
+            <div class="discord-title-block">
+                <h2>Rejoins-nous sur <span>Discord</span></h2>
+                <p>Discute en direct avec la communauté Eons</p>
+            </div>
+            <a href="https://discord.com/invite/KrQsUdUz8W" target="_blank" rel="noopener" class="discord-join-link">Rejoindre →</a>
+        </div>
+
+        <div class="discord-card" id="discordWidget">
+            <div class="discord-label">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.03.056a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+                </svg>
+                Discord
+            </div>
+
+            <div class="discord-card-top">
+                <div class="discord-server-icon" id="discordIcon">⚗</div>
+                <div class="discord-server-info">
+                    <div class="discord-server-name" id="discordName">Eons</div>
+                    <div class="discord-server-desc">La communauté francophone WoW</div>
+                    <div class="discord-online-badge" id="discordOnlineBadge">
+                        <span class="discord-online-dot"></span>
+                        <span id="discordOnlineCount">… en ligne</span>
+                    </div>
+                </div>
+                <div class="discord-online-badge-top" id="discordOnlineTop">
+                    <span class="discord-online-dot"></span>
+                    <span id="discordOnlineCountTop">…</span> en ligne
+                </div>
+            </div>
+
+            <div class="discord-sep"></div>
+
+            <div class="discord-members-list" id="discordMembers">
+                <span class="discord-members-empty">Chargement des membres…</span>
+            </div>
+
+            <a href="https://discord.com/invite/KrQsUdUz8W" target="_blank" rel="noopener" class="discord-cta-btn">
+                Rejoindre Eons Discord →
+            </a>
+        </div>
+    </div>
+</div>
+
 <!-- FOOTER -->
 <footer>
     <p class="footer-logo">Eons</p>
@@ -558,6 +717,67 @@ require_once __DIR__ . '/header.php';
             .catch(() => {});
     }
     setInterval(refresh, 30000);
+})();
+
+// ─── Discord Widget ────────────────────────────────────────────
+(function() {
+    const GUILD_ID = '1492541933359206450';
+    const API_URL  = 'https://discord.com/api/guilds/' + GUILD_ID + '/widget.json';
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function initWidget(data) {
+        // Nom du serveur
+        const nameEl = document.getElementById('discordName');
+        if (nameEl && data.name) nameEl.textContent = data.name;
+
+        // Compteur en ligne
+        const count = data.members ? data.members.length : 0;
+        const el1 = document.getElementById('discordOnlineCount');
+        const el2 = document.getElementById('discordOnlineCountTop');
+        if (el1) el1.textContent = count + ' en ligne';
+        if (el2) el2.textContent = count;
+
+        // Liste membres
+        const list = document.getElementById('discordMembers');
+        if (!list) return;
+        if (!data.members || data.members.length === 0) {
+            list.innerHTML = '<span class="discord-members-empty">Aucun membre visible pour l\'instant.</span>';
+            return;
+        }
+        const max = Math.min(data.members.length, 12);
+        let html = '';
+        for (let i = 0; i < max; i++) {
+            const m = data.members[i];
+            const initiale = (m.username || '?')[0].toUpperCase();
+            const avatarHtml = m.avatar_url
+                ? '<img src="' + m.avatar_url + '" style="width:18px;height:18px;border-radius:50%;object-fit:cover;" alt="">'
+                : '<span class="discord-member-avatar">' + initiale + '</span>';
+            html += '<span class="discord-member-chip">'
+                + avatarHtml
+                + '<span class="discord-member-dot"></span>'
+                + escHtml(m.username || '?')
+                + '</span>';
+        }
+        if (data.members.length > max) {
+            html += '<span class="discord-members-empty">+' + (data.members.length - max) + ' autres…</span>';
+        }
+        list.innerHTML = html;
+    }
+
+    fetch(API_URL)
+        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(initWidget)
+        .catch(function() {
+            const list = document.getElementById('discordMembers');
+            if (list) list.innerHTML = '<span class="discord-members-empty">Widget temporairement indisponible.</span>';
+            const el1 = document.getElementById('discordOnlineCount');
+            const el2 = document.getElementById('discordOnlineCountTop');
+            if (el1) el1.textContent = '— en ligne';
+            if (el2) el2.textContent = '—';
+        });
 })();
 </script>
 </body>
