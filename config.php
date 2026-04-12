@@ -11,6 +11,12 @@ define('DB_USER', 'root');
 define('DB_PASS', 'root');
 define('DB_NAME', 'eons_auth');
 
+define('SOAP_HOST',   '127.0.0.1');
+define('SOAP_PORT',   7878);
+define('SOAP_USER',   'Eonswsoap');
+define('SOAP_PASS',   'Eonsworldsoap');
+define('SOAP_SENDER', 'Boutique');
+
 // ── Connexion Characters DB (optionnelle, pour stats) ────────
 define('DB_CHARS_NAME', 'eons_chars');
 

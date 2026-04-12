@@ -719,26 +719,44 @@ require_once __DIR__ . '/header.php';
                         10=>'#00FF96',11=>'#FF7D0A'
                     ];
 
-                    // Conversion coordonnées WoW → pourcentage sur la carte
+                    // Conversion coordonnées WoW → pourcentage sur le PNG world.png (1002×668)
+                    // Chaque continent a son propre espace de coordonnées en WoW.
+                    // Bornes calées sur le PNG officiel d'Azeroth (WotLK) :
+                    //
+                    // Map 0 — Royaumes de l'Est
+                    //   X : [-17239, 228]  → zone du continent EK dans le PNG
+                    //   Y : [-11900, 16822] → WoW Y inversé (négatif = nord)
+                    //   Sur le PNG : EK occupe environ x=[54%,93%], y=[8%,92%]
+                    //
+                    // Map 1 — Kalimdor
+                    //   X : [-13866, 153]   → zone du continent Kalimdor dans le PNG
+                    //   Y : [-12766, 16500] → WoW Y inversé
+                    //   Sur le PNG : Kalimdor occupe environ x=[5%,43%], y=[8%,92%]
+                    //
+                    // Axe WoW : X croît vers le SUD, Y croît vers l'OUEST
+                    // Sur le PNG : en haut=nord, à gauche=ouest
+                    // Donc : pctX ∝ -Y_wow (Y wow négatif = est = droite)
+                    //         pctY ∝  X_wow (X wow positif = sud = bas)
+
                     function wowToMapPct(float $x, float $y, int $map): array {
-                        // Bornes monde WoW (identiques pour les deux continents dans l'espace global)
-                        $minX = -17000; $maxX = 17000;
-                        $minY = -13000; $maxY = 11600;
-
-                        // Normaliser x et y en [0,1]
-                        $normX = ($x - $minX) / ($maxX - $minX); // 0=ouest, 1=est
-                        $normY = ($y - $minY) / ($maxY - $minY); // 0=nord, 1=sud — mais WoW Y croît vers le sud
-
-                        // Sur le PNG : gauche=Kalimdor (0–46%), droite=EK (54–100%)
-                        // Northrend est en haut centre (~27–70% en X, 0–18% en Y)
-                        if ($map === 1) { // Kalimdor
-                            $pctX = $normX * 0.46;
-                        } else { // EK
-                            $pctX = 0.54 + $normX * 0.46;
+                        if ($map === 0) {
+                            // Royaumes de l'Est
+                            // WoW X: [-17239 (nord) → 228 (sud)] → PNG Y: [8% → 92%]
+                            // WoW Y: [16822 (ouest) → -11900 (est)] → PNG X: [54% → 93%]
+                            $pctY = ($x - (-17239)) / (228 - (-17239));           // 0=nord,1=sud
+                            $pctX = (16822 - $y)   / (16822 - (-11900));          // 0=ouest,1=est
+                            // Mapper dans les zones du PNG
+                            $pctX = 0.54 + $pctX * (0.93 - 0.54);
+                            $pctY = 0.08 + $pctY * (0.92 - 0.08);
+                        } else {
+                            // Kalimdor
+                            // WoW X: [-13866 (nord) → 153 (sud)] → PNG Y: [8% → 92%]
+                            // WoW Y: [16500 (ouest) → -12766 (est)] → PNG X: [5% → 43%]
+                            $pctY = ($x - (-13866)) / (153 - (-13866));
+                            $pctX = (16500 - $y)    / (16500 - (-12766));
+                            $pctX = 0.05 + $pctX * (0.43 - 0.05);
+                            $pctY = 0.08 + $pctY * (0.92 - 0.08);
                         }
-                        // Y : WoW Y min = nord, max = sud → correspond à haut → bas du PNG
-                        $pctY = 1.0 - $normY; // inverser : y bas WoW = haut carte
-
                         return [
                             'x' => round(max(0, min(100, $pctX * 100)), 2),
                             'y' => round(max(0, min(100, $pctY * 100)), 2),
@@ -770,7 +788,7 @@ require_once __DIR__ . '/header.php';
                 <div class="realm-connect-info">
                     <div>
                         <div class="connect-label">Adresse du serveur</div>
-                        <div class="connect-value" id="realm-host">eons-world.eu</div>
+                        <div class="connect-value" id="realm-host">realm.eons-world.eu</div>
                     </div>
                     <div>
                         <div class="connect-label">Port</div>
@@ -923,7 +941,7 @@ require_once __DIR__ . '/header.php';
 <script>
 // ── Copier le realmlist ──────────────────────────────────────
 function copyRealmlist() {
-    const text = 'set realmlist eons-world.eu';
+    const text = 'set realmlist realm.eons-world.eu';
     navigator.clipboard.writeText(text).then(() => {
         const btn = document.querySelector('.connect-copy-btn');
         const orig = btn.textContent;
@@ -936,7 +954,7 @@ function copyRealmlist() {
             btn.style.borderColor = '';
         }, 2000);
     }).catch(() => {
-        prompt('Copiez cette ligne dans votre realmlist.wtf :', 'set realmlist eons-world.eu');
+        prompt('Copiez cette ligne dans votre realmlist.wtf :', 'set realmlist realm.eons-world.eu');
     });
 }
 
