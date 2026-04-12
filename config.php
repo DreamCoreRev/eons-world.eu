@@ -17,6 +17,10 @@ define('SOAP_USER',   'Eonswsoap');
 define('SOAP_PASS',   'Eonsworldsoap');
 define('SOAP_SENDER', 'Boutique');
 
+define('STRIPE_PUBLIC_KEY',     'pk_live_...');
+define('STRIPE_SECRET_KEY',     'sk_live_...');
+define('STRIPE_WEBHOOK_SECRET', 'whsec_...');
+
 // ── Connexion Characters DB (optionnelle, pour stats) ────────
 define('DB_CHARS_NAME', 'eons_chars');
 
