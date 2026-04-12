@@ -7,35 +7,19 @@ require_once __DIR__ . '/config.php';
 
 $isLoggedIn = !empty($_SESSION['logged_in']) && !empty($_SESSION['account_id']);
 
-// ── Téléchargement sécurisé ───────────────────────────────────
-// Le fichier est hors du webroot pour éviter l'accès direct
-// Chemin absolu sur le serveur (adapter si besoin)
-define('CLIENT_FILE_PATH', __DIR__ . '/uploads/client/Eons.rar');
+// ── Téléchargement ───────────────────────────────────────────
+// Redirection vers l'URL publique du fichier (plus fiable qu'un readfile)
+define('CLIENT_FILE_URL',  '/uploads/client/Eons.rar');
 define('CLIENT_FILE_NAME', 'Eons.rar');
-define('CLIENT_FILE_SIZE_DISPLAY', '~4.2 Go'); // Affiché visuellement (approximatif)
+define('CLIENT_FILE_SIZE_DISPLAY', '~18.8 Go');
 
 if (isset($_GET['dl']) && $_GET['dl'] === '1') {
     if (!$isLoggedIn) {
         header('Location: auth.php');
         exit;
     }
-    if (!file_exists(CLIENT_FILE_PATH)) {
-        // Fichier introuvable — rediriger avec erreur
-        header('Location: client.php?error=notfound');
-        exit;
-    }
-    // Forcer le téléchargement
-    header('Content-Description: File Transfer');
-    header('Content-Type: application/octet-stream');
-    header('Content-Disposition: attachment; filename="' . CLIENT_FILE_NAME . '"');
-    header('Content-Transfer-Encoding: binary');
-    header('Expires: 0');
-    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-    header('Pragma: public');
-    header('Content-Length: ' . filesize(CLIENT_FILE_PATH));
-    ob_clean();
-    flush();
-    readfile(CLIENT_FILE_PATH);
+    // Redirect direct — le navigateur gère le téléchargement
+    header('Location: ' . CLIENT_FILE_URL);
     exit;
 }
 
