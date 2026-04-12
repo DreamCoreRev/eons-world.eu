@@ -642,7 +642,6 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
         <li><a href="boutique.php">Boutique</a></li>
 		<li><a href="don.php">Don</a></li>
 		<li><a href="vote.php">Vote</a></li>
-        <li><a href="#">Guides</a></li>
         <li><a href="#">Communauté</a></li>
     </ul>
 
@@ -669,7 +668,6 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
         <li><a href="boutique.php">Boutique</a></li>
 		<li><a href="don.php">Don</a></li>
 		<li><a href="vote.php">Vote</a></li>
-        <li><a href="#">Guides</a></li>
         <li><a href="#">Communauté</a></li>
     </ul>
     <div class="nav-mobile-account">

@@ -17,9 +17,9 @@ define('SOAP_USER',   'Eonswsoap');
 define('SOAP_PASS',   'Eonsworldsoap');
 define('SOAP_SENDER', 'Boutique');
 
-define('STRIPE_PUBLIC_KEY',     'pk_live_...');
-define('STRIPE_SECRET_KEY',     'sk_live_...');
-define('STRIPE_WEBHOOK_SECRET', 'whsec_...');
+define('STRIPE_PUBLIC_KEY',     'pk_test_51TLQj3R7Qf5NnuiTp0nwHaVvgPSlzkalwAG3yFqESdgbONdT0eEo6hkvQoL0aZWutXpgFzqLvFn5QJycXmYWd04M00ZbUkMyn3');
+define('STRIPE_SECRET_KEY',     'sk_test_51TLQj3R7Qf5NnuiTqc1ddc9DFEboU3HIE6zUf3fXOTnR1bouFTzuSJqrZGd748eVdjqV4XzneVhR7xCKsnZgvQm300bFqbMHcM');
+define('STRIPE_WEBHOOK_SECRET', 'whsec_iRlRbhPQbFCDmrCl05520OOCxLHt2qdu');
 
 // ── Connexion Characters DB (optionnelle, pour stats) ────────
 define('DB_CHARS_NAME', 'eons_chars');
