@@ -20,6 +20,13 @@
 //    PRIMARY KEY (`id`),
 //    KEY `idx_acc_site` (`account_id`, `site_id`)
 //  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+//
+//  CREATE TABLE IF NOT EXISTS `vp_vote_pending` (
+//    `account_id` INT UNSIGNED NOT NULL,
+//    `site_id`    TINYINT UNSIGNED NOT NULL,
+//    `clicked_at` DATETIME NOT NULL DEFAULT NOW(),
+//    PRIMARY KEY (`account_id`, `site_id`)
+//  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 // ============================================================
 require_once __DIR__ . '/config.php';
 
@@ -71,6 +78,7 @@ $voteSites = [
 // ── Données joueur ────────────────────────────────────────────
 $playerVp   = 0;
 $lastVotes  = []; // [site_id => voted_at DateTime]
+$pendingVotes = []; // [site_id, ...] — a cliqué Voter, pas encore réclamé
 $flashMsg   = '';
 $flashType  = 'info';
 $errors     = [];
@@ -96,9 +104,46 @@ if ($isLoggedIn) {
         foreach ($s2->fetchAll() as $row) {
             $lastVotes[(int)$row['site_id']] = new DateTime($row['last_vote']);
         }
+
+        // Votes en attente (cliqué Voter mais pas encore réclamé)
+        $s3 = $db->prepare(
+            "SELECT site_id FROM vp_vote_pending WHERE account_id = :id"
+        );
+        $s3->execute([':id' => $accountId]);
+        $pendingVotes = array_map('intval', array_column($s3->fetchAll(), 'site_id'));
     } catch (PDOException $e) {
         error_log('[Vote] Lecture: ' . $e->getMessage());
     }
+}
+
+// ── AJAX — Enregistrement du clic "Voter" ─────────────────────
+if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST'
+    && ($_POST['action'] ?? '') === 'mark_voted') {
+
+    header('Content-Type: application/json');
+    if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) {
+        echo json_encode(['ok' => false, 'error' => 'CSRF invalide']);
+        exit;
+    }
+    $siteId = (int)($_POST['site_id'] ?? 0);
+    $validIds = array_column($voteSites, 'id');
+    if (!in_array($siteId, $validIds, true)) {
+        echo json_encode(['ok' => false, 'error' => 'Site invalide']);
+        exit;
+    }
+    try {
+        $db = getAuthDB();
+        $db->prepare(
+            "INSERT INTO vp_vote_pending (account_id, site_id, clicked_at)
+             VALUES (:aid, :sid, NOW())
+             ON DUPLICATE KEY UPDATE clicked_at = NOW()"
+        )->execute([':aid' => $accountId, ':sid' => $siteId]);
+        echo json_encode(['ok' => true]);
+    } catch (PDOException $e) {
+        error_log('[Vote] mark_voted: ' . $e->getMessage());
+        echo json_encode(['ok' => false, 'error' => 'DB error']);
+    }
+    exit;
 }
 
 // ── Traitement CSRF — Réclamation de VP ───────────────────────
@@ -153,6 +198,11 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST'
 
                     $db->commit();
 
+                    // Supprimer le pending (vote réclamé)
+                    $db->prepare(
+                        "DELETE FROM vp_vote_pending WHERE account_id = :aid AND site_id = :sid"
+                    )->execute([':aid' => $accountId, ':sid' => $siteId]);
+
                     $playerVp += $site['vp_reward'];
                     $lastVotes[$siteId] = new DateTime();
                     $flashMsg  = '✦ Merci pour votre vote sur <strong>' . htmlspecialchars($site['name']) . '</strong> ! <strong>+' . $site['vp_reward'] . ' VP</strong> crédités sur votre compte.';
@@ -173,19 +223,24 @@ if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_byt
 $csrfToken = $_SESSION['csrf_token'];
 
 // ── Calcul état de chaque site ────────────────────────────────
+// États : 'ready' (jamais voté), 'voted' (a cliqué Voter, peut Réclamer), 'cooldown' (déjà réclamé)
 $now = new DateTime();
 foreach ($voteSites as &$vs) {
-    $lastVote = $lastVotes[$vs['id']] ?? null;
+    $lastVote  = $lastVotes[$vs['id']] ?? null;
+    $hasPending = in_array($vs['id'], $pendingVotes, true);
+
     if ($lastVote === null) {
-        $vs['state']           = 'ready';   // jamais voté
-        $vs['remaining_s']     = 0;
-        $vs['cooldown_pct']    = 100;
+        // Jamais réclamé — prêt à voter (ou déjà cliqué Voter)
+        $vs['state']        = $hasPending ? 'voted' : 'ready';
+        $vs['remaining_s']  = 0;
+        $vs['cooldown_pct'] = 100;
     } else {
         $elapsed   = $now->getTimestamp() - $lastVote->getTimestamp();
         $total     = $vs['cooldown_h'] * 3600;
         $remaining = max(0, $total - $elapsed);
         if ($remaining === 0) {
-            $vs['state']        = 'ready';
+            // Cooldown terminé — prêt à revoter (ou déjà cliqué Voter)
+            $vs['state']        = $hasPending ? 'voted' : 'ready';
             $vs['remaining_s']  = 0;
             $vs['cooldown_pct'] = 100;
         } else {
@@ -460,6 +515,28 @@ require_once __DIR__ . '/header.php';
 }
 .btn-vote-open:hover::before { transform: translateX(150%) skewX(-20deg); }
 
+/* Bouton Voter déjà cliqué */
+.btn-vote-open--done {
+    color: #6edf8a;
+    background: rgba(110,223,138,0.08);
+    border-color: rgba(110,223,138,0.5);
+    cursor: default;
+    pointer-events: none;
+    opacity: 0.75;
+}
+
+/* Bouton Voter désactivé (en cooldown) */
+.btn-vote-open--disabled {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-family: 'Cinzel', serif; font-size: 0.58rem;
+    font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 0.55rem 1.1rem;
+    background: rgba(30,33,70,0.5); color: rgba(168,180,208,0.35);
+    border: 1px solid rgba(136,144,255,0.08);
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    cursor: not-allowed; white-space: nowrap;
+}
+
 /* ─── BOUTON RÉCLAMER ───────────────────────────────────────── */
 .btn-vote-claim {
     display: inline-flex; align-items: center; gap: 0.4rem;
@@ -658,25 +735,33 @@ require_once __DIR__ . '/header.php';
                 <span class="vote-site-url"><?= htmlspecialchars(parse_url($vs['url'], PHP_URL_HOST)) ?></span>
 
                 <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                    <!-- Bouton ouvrir le site -->
-                    <a href="<?= htmlspecialchars($vs['url']) ?>"
-                       target="_blank" rel="noopener noreferrer"
-                       class="btn-vote-open">
-                        ↗ Voter
-                    </a>
+                    <!-- Bouton ouvrir le site de vote -->
+                    <?php if ($isCooldown): ?>
+                        <button class="btn-vote-open btn-vote-open--disabled" disabled title="Cooldown en cours">↗ Voter</button>
+                    <?php else: ?>
+                        <a href="<?= htmlspecialchars($vs['url']) ?>"
+                           target="_blank" rel="noopener noreferrer"
+                           class="btn-vote-open<?= ($vs['state'] === 'voted') ? ' btn-vote-open--done' : '' ?>"
+                           data-vote-btn="<?= $vs['id'] ?>"
+                           data-csrf="<?= htmlspecialchars($csrfToken) ?>">
+                            <?= ($vs['state'] === 'voted') ? '✔ Voté' : '↗ Voter' ?>
+                        </a>
+                    <?php endif; ?>
 
                     <!-- Bouton réclamer / cooldown / connexion -->
                     <?php if (!$isLoggedIn): ?>
                         <a href="auth.php" class="btn-vote-login">🔒 Connexion</a>
                     <?php elseif ($isCooldown): ?>
                         <button class="btn-vote-cooldown" disabled title="Cooldown en cours">⏳ Cooldown</button>
-                    <?php else: ?>
+                    <?php elseif ($vs['state'] === 'voted'): ?>
                         <form method="POST" action="vote.php" style="display:inline">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                             <input type="hidden" name="action"     value="claim">
                             <input type="hidden" name="site_id"    value="<?= $vs['id'] ?>">
                             <button type="submit" class="btn-vote-claim">✦ Réclamer +<?= $vs['vp_reward'] ?> VP</button>
                         </form>
+                    <?php else: ?>
+                        <button class="btn-vote-cooldown" disabled title="Votez d'abord pour débloquer">🔒 Votez d'abord</button>
                     <?php endif; ?>
                 </div>
             </div>
@@ -713,6 +798,47 @@ require_once __DIR__ . '/header.php';
 </main>
 
 <script>
+// ─── AJAX — BOUTON VOTER ──────────────────────────────────────
+document.querySelectorAll('[data-vote-btn]').forEach(link => {
+    if (link.classList.contains('btn-vote-open--done')) return; // déjà voté
+
+    link.addEventListener('click', function() {
+        const siteId = this.dataset.voteBtn;
+        const csrf   = this.dataset.csrf;
+
+        // Bloquer visuellement immédiatement
+        this.textContent = '✔ Voté';
+        this.classList.add('btn-vote-open--done');
+
+        // Débloquer le bouton Réclamer dans la même carte
+        const card = this.closest('.vote-card');
+        if (card) {
+            const locked = card.querySelector('.btn-vote-cooldown[disabled]');
+            if (locked && locked.title === 'Votez d\'abord pour débloquer') {
+                // Remplacer par le formulaire de réclamation
+                const vp = card.querySelector('.vote-reward-pill')?.textContent.match(/\d+/)?.[0] || '?';
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'vote.php';
+                form.style.display = 'inline';
+                form.innerHTML = `
+                    <input type="hidden" name="csrf_token" value="${csrf}">
+                    <input type="hidden" name="action"     value="claim">
+                    <input type="hidden" name="site_id"    value="${siteId}">
+                    <button type="submit" class="btn-vote-claim">✦ Réclamer +${vp} VP</button>`;
+                locked.replaceWith(form);
+            }
+        }
+
+        // Enregistrer en DB
+        fetch('vote.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({action: 'mark_voted', site_id: siteId, csrf_token: csrf})
+        }).catch(() => {}); // silencieux — la carte se rechargera
+    });
+});
+
 // ─── COUNTDOWN TIMERS ─────────────────────────────────────────
 (function() {
     const cards = document.querySelectorAll('.vote-card[data-remaining]');
@@ -744,7 +870,7 @@ require_once __DIR__ . '/header.php';
                 }
                 if (fillEl) fillEl.style.width = '100%';
                 card.classList.remove('is-cooldown');
-                // Recharger pour afficher le bouton Réclamer
+                // Recharger pour afficher les bons boutons
                 setTimeout(() => location.reload(), 800);
                 return;
             }

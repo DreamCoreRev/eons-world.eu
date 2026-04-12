@@ -100,6 +100,13 @@ CREATE TABLE IF NOT EXISTS `vp_vote_log` (
   KEY `idx_acc_site` (`account_id`, `site_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `vp_vote_pending` (
+  `account_id` INT UNSIGNED NOT NULL,
+  `site_id`    TINYINT UNSIGNED NOT NULL,
+  `clicked_at` DATETIME NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (`account_id`, `site_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ============================================================
 --  Fin de la migration
 -- ============================================================
