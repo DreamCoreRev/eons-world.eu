@@ -660,10 +660,6 @@ require_once __DIR__ . '/header.php';
                 <div class="discord-server-info">
                     <div class="discord-server-name" id="discordName">Eons</div>
                     <div class="discord-server-desc">La communauté francophone WoW</div>
-                    <div class="discord-online-badge" id="discordOnlineBadge">
-                        <span class="discord-online-dot"></span>
-                        <span id="discordOnlineCount">… en ligne</span>
-                    </div>
                 </div>
                 <div class="discord-online-badge-top" id="discordOnlineTop">
                     <span class="discord-online-dot"></span>
