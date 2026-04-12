@@ -14,7 +14,7 @@ $errors    = [];
 
 try {
     $db   = getAuthDB();
-    $stmt = $db->prepare("SELECT id, username, email, joindate, last_login, last_ip, online, expansion, failed_logins, locked, mutetime FROM account WHERE id = :id LIMIT 1");
+    $stmt = $db->prepare("SELECT id, username, email, joindate, last_login, last_ip, online, expansion, failed_logins, locked, mutetime, dp, vp FROM account WHERE id = :id LIMIT 1");
     $stmt->execute([':id' => $accountId]);
     $account = $stmt->fetch();
     if (!$account) { session_destroy(); header('Location: auth.php'); exit; }
@@ -394,6 +394,44 @@ require_once __DIR__ . '/header.php';
 
 .col-span-full { grid-column: 1 / -1; }
 
+/* ─── CURRENCY PANEL ────────────────────────────────────────── */
+.currency-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+.currency-card {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 1.4rem 1rem;
+    position: relative; overflow: hidden;
+    text-align: center;
+}
+.currency-card-dp {
+    background: linear-gradient(135deg, rgba(20,24,80,0.6), rgba(90,48,212,0.2));
+    border: 1px solid rgba(136,144,255,0.22);
+}
+.currency-card-vp {
+    background: linear-gradient(135deg, rgba(40,20,10,0.6), rgba(200,151,42,0.18));
+    border: 1px solid rgba(240,192,96,0.22);
+}
+.currency-icon { font-size: 1.8rem; margin-bottom: 0.5rem; line-height: 1; }
+.currency-amount {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.7rem; font-weight: 700; line-height: 1;
+}
+.currency-card-dp .currency-amount { color: var(--arcane-bright); text-shadow: 0 0 20px rgba(136,144,255,0.5); }
+.currency-card-vp .currency-amount { color: var(--gold-bright);   text-shadow: 0 0 20px rgba(240,192,96,0.5); }
+.currency-label {
+    font-family: 'Cinzel', serif; font-size: 0.55rem;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--silver); opacity: 0.7; margin-top: 0.35rem;
+}
+.currency-desc {
+    font-family: 'Crimson Pro', serif; font-size: 0.8rem;
+    color: var(--silver); opacity: 0.55; margin-top: 0.3rem;
+    font-style: italic;
+}
+
 /* ─── ERROR LIST ────────────────────────────────────────────── */
 .errors-box {
     background: rgba(255,95,95,0.07); border-left: 3px solid rgba(255,95,95,0.6);
@@ -528,6 +566,30 @@ require_once __DIR__ . '/header.php';
                     <div class="stat-box">
                         <div class="stat-num">3.3.5</div>
                         <div class="stat-desc">Version client</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CURRENCY PANEL -->
+        <div class="panel reveal">
+            <div class="panel-header">
+                <span class="panel-icon">💎</span>
+                <span class="panel-title">Mon <span>Solde</span></span>
+            </div>
+            <div class="panel-body">
+                <div class="currency-grid">
+                    <div class="currency-card currency-card-dp">
+                        <div class="currency-icon">💠</div>
+                        <div class="currency-amount"><?= number_format((int)($account['dp'] ?? 0)) ?></div>
+                        <div class="currency-label">Donation Points</div>
+                        <div class="currency-desc">Points de donation</div>
+                    </div>
+                    <div class="currency-card currency-card-vp">
+                        <div class="currency-icon">⭐</div>
+                        <div class="currency-amount"><?= number_format((int)($account['vp'] ?? 0)) ?></div>
+                        <div class="currency-label">Vote Points</div>
+                        <div class="currency-desc">Points de vote</div>
                     </div>
                 </div>
             </div>
