@@ -16,12 +16,20 @@ $serverOnline = checkServerStatus();
 // ── Joueurs en ligne ─────────────────────────────────────────
 $onlinePlayers = 0;
 $totalAccounts = 0;
+$onlineChars   = [];
 try {
     $chars = new PDO(
         'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_CHARS_NAME . ';charset=utf8mb4',
         DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
     $onlinePlayers = (int)$chars->query("SELECT COUNT(*) FROM characters WHERE online = 1")->fetchColumn();
+    // Positions des joueurs en ligne sur les cartes du monde (map 0 = Royaumes de l'Est, 1 = Kalimdor)
+    $onlineChars = $chars->query(
+        "SELECT name, race, class, level, map, position_x, position_y
+         FROM characters
+         WHERE online = 1 AND map IN (0, 1)
+         LIMIT 100"
+    )->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     error_log('[Royaumes] Chars DB: ' . $e->getMessage());
 }
@@ -171,22 +179,20 @@ require_once __DIR__ . '/header.php';
     background: linear-gradient(90deg, rgba(240,192,96,0.3), transparent);
 }
 
-/* SVG carte Azeroth stylisée */
+/* Carte PNG monde */
 .realm-map-svg-wrap {
     position: relative;
     width: 100%;
-    aspect-ratio: 16/9;
-    background:
-        radial-gradient(ellipse 80% 60% at 35% 55%, rgba(20,30,100,0.5) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 70% 40%, rgba(60,20,120,0.3) 0%, transparent 55%),
-        rgba(4,6,20,0.9);
-    border: 1px solid rgba(136,144,255,0.1);
+    aspect-ratio: 149/100;
+    border: 1px solid rgba(136,144,255,0.15);
     overflow: hidden;
+    background: #02030c;
 }
-
-.realm-map-svg-wrap svg {
-    width: 100%;
-    height: 100%;
+.realm-map-svg-wrap img.world-map-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: brightness(0.85) saturate(0.9);
 }
 
 /* Points lumineux sur la carte */
@@ -245,7 +251,71 @@ require_once __DIR__ . '/header.php';
     pointer-events: none;
 }
 
+/* Overlay vignette carte */
+.map-vignette {
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(2,3,12,0.35) 0%, transparent 15%, transparent 85%, rgba(2,3,12,0.5) 100%),
+        linear-gradient(90deg,  rgba(2,3,12,0.3)  0%, transparent 10%, transparent 90%, rgba(2,3,12,0.3) 100%);
+    z-index: 2;
+}
+
+/* Canvas joueurs */
+#playerMapCanvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* Boussole */
+.map-compass {
+    position: absolute; bottom: 1rem; right: 1rem;
+    z-index: 5; opacity: 0.85;
+    filter: drop-shadow(0 0 8px rgba(240,192,96,0.3));
+}
+
+/* Tooltip joueur */
+.map-player-tooltip {
+    position: absolute;
+    background: rgba(6,8,26,0.96);
+    border: 1px solid rgba(136,144,255,0.3);
+    color: var(--white);
+    font-family: 'Cinzel', serif;
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    padding: 0.5rem 0.8rem;
+    pointer-events: none;
+    z-index: 10;
+    display: none;
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+}
+.map-player-tooltip .tip-name { color: var(--gold-bright); margin-bottom: 0.2rem; font-size: 0.65rem; }
+.map-player-tooltip .tip-class { opacity: 0.75; }
+
+/* Légende joueurs */
+.map-legend {
+    position: absolute; bottom: 1rem; left: 1rem;
+    z-index: 5;
+    font-family: 'Cinzel', serif; font-size: 0.5rem;
+    letter-spacing: 0.15em; color: var(--silver);
+    background: rgba(6,8,26,0.8);
+    border: 1px solid rgba(136,144,255,0.15);
+    padding: 0.4rem 0.7rem;
+    display: flex; align-items: center; gap: 0.5rem;
+    backdrop-filter: blur(6px);
+}
+.map-legend-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gold-bright);
+    box-shadow: 0 0 8px rgba(240,192,96,0.8);
+    animation: pointPulse 2s ease-in-out infinite;
+}
+
 /* Légende statut serveur dans la carte */
+
 .map-status-badge {
     position: absolute;
     top: 1rem; right: 1rem;
@@ -581,195 +651,120 @@ require_once __DIR__ . '/header.php';
                 <div class="realm-map-title">✦ Carte du Royaume</div>
 
                 <div class="realm-map-svg-wrap">
+
                     <!-- Badge statut -->
                     <div class="map-status-badge">
                         <div class="status-led <?= $serverOnline ? '' : 'offline' ?>"></div>
                         <?= $serverOnline ? 'En ligne' : 'Hors ligne' ?>
                     </div>
 
-                    <!-- Carte SVG stylisée Azeroth/fantasy -->
-                    <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
-                        <defs>
-                            <radialGradient id="oceanGrad" cx="50%" cy="50%" r="70%">
-                                <stop offset="0%"   stop-color="#0a0f3a" stop-opacity="1"/>
-                                <stop offset="100%" stop-color="#020512" stop-opacity="1"/>
-                            </radialGradient>
-                            <filter id="glow">
-                                <feGaussianBlur stdDeviation="3" result="blur"/>
-                                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                            </filter>
-                            <filter id="softGlow">
-                                <feGaussianBlur stdDeviation="6" result="blur"/>
-                                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                            </filter>
-                        </defs>
+                    <!-- Boussole -->
+                    <div class="map-compass">
+                        <svg width="52" height="52" viewBox="0 0 52 52">
+                            <circle cx="26" cy="26" r="24" fill="rgba(6,8,26,0.85)" stroke="rgba(240,192,96,0.35)" stroke-width="1"/>
+                            <circle cx="26" cy="26" r="18" fill="none" stroke="rgba(136,144,255,0.15)" stroke-width="0.5" stroke-dasharray="3,3"/>
+                            <polygon points="26,8 28.5,22 26,18 23.5,22" fill="rgba(255,100,100,0.85)"/>
+                            <polygon points="26,44 28.5,30 26,34 23.5,30" fill="rgba(180,190,255,0.55)"/>
+                            <polygon points="8,26 22,23.5 18,26 22,28.5" fill="rgba(180,190,255,0.45)"/>
+                            <polygon points="44,26 30,23.5 34,26 30,28.5" fill="rgba(180,190,255,0.45)"/>
+                            <circle cx="26" cy="26" r="3" fill="rgba(240,192,96,0.9)"/>
+                            <text x="26" y="5.5" font-family="serif" font-size="6" fill="rgba(240,192,96,0.8)" text-anchor="middle">N</text>
+                        </svg>
+                    </div>
 
-                        <!-- Fond océan -->
-                        <rect width="800" height="450" fill="url(#oceanGrad)"/>
+                    <!-- Image de la carte -->
+                    <img class="world-map-img"
+                         src="https://eons-world.eu/assets/map/world/world.png"
+                         alt="Carte du monde d'Azeroth" />
 
-                        <!-- Lignes de grille subtiles -->
-                        <g stroke="rgba(136,144,255,0.04)" stroke-width="1">
-                            <?php for($i=0;$i<18;$i++): ?>
-                            <line x1="<?=$i*47?>" y1="0" x2="<?=$i*47?>" y2="450"/>
-                            <?php endfor; ?>
-                            <?php for($i=0;$i<10;$i++): ?>
-                            <line x1="0" y1="<?=$i*50?>" x2="800" y2="<?=$i*50?>"/>
-                            <?php endfor; ?>
-                        </g>
+                    <!-- Overlay sombre sur les bords -->
+                    <div class="map-vignette"></div>
 
-                        <!-- Continents / terres (silhouettes stylisées) -->
-                        <!-- Continent Kalimdor (gauche) -->
-                        <path d="M 80,60 C 100,40 160,35 200,55 C 240,75 260,90 270,130
-                                 C 280,170 285,200 275,240 C 265,280 240,310 220,340
-                                 C 200,370 185,385 170,390 C 145,395 120,380 105,355
-                                 C 85,325 70,290 65,255 C 55,210 50,175 55,135
-                                 C 60,100 65,78 80,60 Z"
-                              fill="rgba(20,40,80,0.7)" stroke="rgba(136,144,255,0.2)" stroke-width="1.5"/>
-                        <!-- Détails relief Kalimdor -->
-                        <path d="M 130,100 C 150,90 170,95 185,110 C 165,130 145,125 130,100 Z"
-                              fill="rgba(136,144,255,0.06)"/>
-                        <path d="M 160,200 C 180,185 210,190 220,210 C 200,230 175,228 160,200 Z"
-                              fill="rgba(136,144,255,0.05)"/>
-                        <!-- Montagnes Kalimdor -->
-                        <g fill="rgba(100,120,200,0.15)" stroke="rgba(136,144,255,0.12)" stroke-width="0.8">
-                            <polygon points="120,150 135,120 150,150"/>
-                            <polygon points="145,155 158,128 172,155"/>
-                            <polygon points="190,280 205,252 220,280"/>
-                        </g>
+                    <!-- Joueurs en ligne (canvas overlay) -->
+                    <canvas id="playerMapCanvas"></canvas>
 
-                        <!-- Continent Royaumes de l'Est (droite) -->
-                        <path d="M 380,50 C 410,35 470,38 510,60 C 550,82 575,110 590,145
-                                 C 610,185 615,220 605,258 C 595,295 570,325 545,348
-                                 C 520,370 490,382 460,380 C 430,378 405,362 385,338
-                                 C 360,308 348,275 345,240 C 340,200 345,160 360,125
-                                 C 368,97 355,68 380,50 Z"
-                              fill="rgba(25,35,85,0.7)" stroke="rgba(136,144,255,0.2)" stroke-width="1.5"/>
-                        <!-- Détails Royaumes -->
-                        <path d="M 420,100 C 445,85 475,92 488,115 C 462,138 435,132 420,100 Z"
-                              fill="rgba(136,144,255,0.06)"/>
-                        <path d="M 440,250 C 465,235 495,240 505,262 C 482,282 455,278 440,250 Z"
-                              fill="rgba(136,144,255,0.05)"/>
-                        <!-- Montagnes Royaumes -->
-                        <g fill="rgba(100,120,200,0.15)" stroke="rgba(136,144,255,0.12)" stroke-width="0.8">
-                            <polygon points="450,130 465,100 480,130"/>
-                            <polygon points="475,135 490,108 505,135"/>
-                            <polygon points="420,300 435,272 450,300"/>
-                        </g>
+                    <!-- Tooltip joueur -->
+                    <div class="map-player-tooltip" id="mapTooltip"></div>
 
-                        <!-- Northrend (haut centre) -->
-                        <path d="M 310,15 C 335,5 380,8 410,20 C 435,32 445,50 440,68
-                                 C 432,85 415,90 390,88 C 365,86 340,80 320,65
-                                 C 300,50 290,28 310,15 Z"
-                              fill="rgba(180,200,255,0.12)" stroke="rgba(200,220,255,0.25)" stroke-width="1.5"/>
-                        <!-- Glace Northrend -->
-                        <path d="M 330,30 C 350,22 375,25 390,38 C 370,50 348,48 330,30 Z"
-                              fill="rgba(200,220,255,0.08)"/>
-                        <!-- Label Northrend -->
-                        <text x="375" y="55" font-family="serif" font-size="7" fill="rgba(200,220,255,0.5)"
-                              text-anchor="middle" letter-spacing="2" transform="rotate(-5,375,55)">NORTHREND</text>
+                    <!-- Légende -->
+                    <?php if (!empty($onlineChars)): ?>
+                    <div class="map-legend">
+                        <div class="map-legend-dot"></div>
+                        <?= count($onlineChars) ?> joueur<?= count($onlineChars) > 1 ? 's' : '' ?> en ligne
+                    </div>
+                    <?php endif; ?>
 
-                        <!-- Outreterre (bas centre-droit) -->
-                        <path d="M 580,300 C 598,285 630,288 648,305 C 665,320 668,342 655,358
-                                 C 640,374 615,378 598,365 C 578,350 565,328 580,300 Z"
-                              fill="rgba(120,40,160,0.2)" stroke="rgba(160,80,200,0.3)" stroke-width="1.5"/>
-                        <text x="615" y="335" font-family="serif" font-size="6" fill="rgba(160,100,220,0.5)"
-                              text-anchor="middle" letter-spacing="1">OUTRETERRE</text>
+                    <?php
+                    // Coordonnées WoW → pourcentage sur la carte PNG
+                    // Map 0 (Royaumes de l'Est) : x de -17600 à 17600, y de -13500 à 13500
+                    // Map 1 (Kalimdor)            : x de -17600 à 17600, y de -13500 à 13500
+                    // Le PNG world.png est 1090×730 (ratio ~1.49:1)
+                    // Kalimdor occupe la moitié gauche, Royaumes de l'Est la droite
+                    // Northrend est en haut centre (~30% largeur, 0–25% hauteur)
 
-                        <!-- Océan / Mer -->
-                        <!-- Lignes de vague -->
-                        <g stroke="rgba(50,70,160,0.12)" stroke-width="1" fill="none">
-                            <path d="M 285,150 C 295,145 305,155 315,150"/>
-                            <path d="M 285,170 C 295,165 305,175 315,170"/>
-                            <path d="M 285,190 C 295,185 305,195 315,190"/>
-                            <path d="M 285,210 C 295,205 305,215 315,210"/>
-                            <path d="M 285,230 C 295,225 305,235 315,230"/>
-                            <path d="M 285,250 C 295,245 305,255 315,250"/>
-                            <path d="M 285,270 C 295,265 305,275 315,270"/>
-                        </g>
+                    // Bornes approx. WoW pour le PNG fourni (calées visuellement)
+                    // Map 0 (EK)      : x [-17000, 17000] → [50%, 100%] de la largeur
+                    //                   y [-13000, 11600] → [0%, 100%] de la hauteur (y inversé)
+                    // Map 1 (Kalimdor): x [-17000, 17000] → [0%, 50%] de la largeur
+                    //                   y [-13000, 11600] → [0%, 100%] de la hauteur
 
-                        <!-- Boussole décorative -->
-                        <g transform="translate(720, 60)">
-                            <circle r="28" fill="rgba(6,8,26,0.8)" stroke="rgba(240,192,96,0.3)" stroke-width="1"/>
-                            <circle r="22" fill="none" stroke="rgba(136,144,255,0.15)" stroke-width="0.5" stroke-dasharray="3,3"/>
-                            <polygon points="0,-18 3,-4 0,-8 -3,-4" fill="rgba(255,100,100,0.7)"/>
-                            <polygon points="0,18 3,4 0,8 -3,4" fill="rgba(200,210,255,0.5)"/>
-                            <polygon points="-18,0 -4,3 -8,0 -4,-3" fill="rgba(200,210,255,0.4)"/>
-                            <polygon points="18,0 4,3 8,0 4,-3" fill="rgba(200,210,255,0.4)"/>
-                            <circle r="3" fill="rgba(240,192,96,0.8)"/>
-                            <text x="0" y="-24" font-family="serif" font-size="7" fill="rgba(240,192,96,0.7)"
-                                  text-anchor="middle">N</text>
-                        </g>
+                    $classes = [
+                        1=>'Guerrier',2=>'Paladin',3=>'Chasseur',4=>'Voleur',5=>'Prêtre',
+                        6=>'Chevalier de la mort',7=>'Chaman',8=>'Mage',9=>'Démoniste',
+                        10=>'Moine',11=>'Druide'
+                    ];
+                    $classColors = [
+                        1=>'#C79C6E',2=>'#F58CBA',3=>'#ABD473',4=>'#FFF569',5=>'#FFFFFF',
+                        6=>'#C41F3B',7=>'#0070DE',8=>'#69CCF0',9=>'#9482C9',
+                        10=>'#00FF96',11=>'#FF7D0A'
+                    ];
 
-                        <!-- Lignes de navigation stylisées -->
-                        <line x1="200" y1="220" x2="380" y2="220"
-                              stroke="rgba(240,192,96,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
-                        <line x1="380" y1="220" x2="540" y2="220"
-                              stroke="rgba(240,192,96,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
+                    // Conversion coordonnées WoW → pourcentage sur la carte
+                    function wowToMapPct(float $x, float $y, int $map): array {
+                        // Bornes monde WoW (identiques pour les deux continents dans l'espace global)
+                        $minX = -17000; $maxX = 17000;
+                        $minY = -13000; $maxY = 11600;
 
-                        <!-- Glyphe central dans l'océan -->
-                        <g transform="translate(320,220)" opacity="0.15">
-                            <circle r="15" fill="none" stroke="rgba(136,144,255,0.6)" stroke-width="0.8"/>
-                            <line x1="0" y1="-15" x2="0" y2="15" stroke="rgba(136,144,255,0.6)" stroke-width="0.5"/>
-                            <line x1="-15" y1="0" x2="15" y2="0" stroke="rgba(136,144,255,0.6)" stroke-width="0.5"/>
-                        </g>
+                        // Normaliser x et y en [0,1]
+                        $normX = ($x - $minX) / ($maxX - $minX); // 0=ouest, 1=est
+                        $normY = ($y - $minY) / ($maxY - $minY); // 0=nord, 1=sud — mais WoW Y croît vers le sud
 
-                        <!-- Noms des continents -->
-                        <text x="165" y="230" font-family="serif" font-size="8" fill="rgba(136,144,255,0.35)"
-                              text-anchor="middle" letter-spacing="3" transform="rotate(-5,165,230)">KALIMDOR</text>
-                        <text x="470" y="220" font-family="serif" font-size="7" fill="rgba(136,144,255,0.3)"
-                              text-anchor="middle" letter-spacing="2">ROYAUMES DE L'EST</text>
+                        // Sur le PNG : gauche=Kalimdor (0–46%), droite=EK (54–100%)
+                        // Northrend est en haut centre (~27–70% en X, 0–18% en Y)
+                        if ($map === 1) { // Kalimdor
+                            $pctX = $normX * 0.46;
+                        } else { // EK
+                            $pctX = 0.54 + $normX * 0.46;
+                        }
+                        // Y : WoW Y min = nord, max = sud → correspond à haut → bas du PNG
+                        $pctY = 1.0 - $normY; // inverser : y bas WoW = haut carte
 
-                        <!-- Points d'intérêt lumineux -->
-                        <!-- Orgrimmar -->
-                        <g filter="url(#glow)">
-                            <circle cx="155" cy="155" r="4" fill="rgba(255,80,80,0.9)"/>
-                            <circle cx="155" cy="155" r="8" fill="none" stroke="rgba(255,80,80,0.4)" stroke-width="1">
-                                <animate attributeName="r" values="8;16;8" dur="2s" repeatCount="indefinite"/>
-                                <animate attributeName="stroke-opacity" values="0.4;0;0.4" dur="2s" repeatCount="indefinite"/>
-                            </circle>
-                        </g>
-                        <text x="155" y="145" font-family="serif" font-size="6" fill="rgba(255,150,100,0.7)"
-                              text-anchor="middle" letter-spacing="1">Orgrimmar</text>
+                        return [
+                            'x' => round(max(0, min(100, $pctX * 100)), 2),
+                            'y' => round(max(0, min(100, $pctY * 100)), 2),
+                        ];
+                    }
 
-                        <!-- Stormwind -->
-                        <g filter="url(#glow)">
-                            <circle cx="450" cy="180" r="4" fill="rgba(100,150,255,0.9)"/>
-                            <circle cx="450" cy="180" r="8" fill="none" stroke="rgba(100,150,255,0.4)" stroke-width="1">
-                                <animate attributeName="r" values="8;16;8" dur="2.4s" repeatCount="indefinite"/>
-                                <animate attributeName="stroke-opacity" values="0.4;0;0.4" dur="2.4s" repeatCount="indefinite"/>
-                            </circle>
-                        </g>
-                        <text x="450" y="170" font-family="serif" font-size="6" fill="rgba(150,180,255,0.7)"
-                              text-anchor="middle" letter-spacing="1">Hurlevent</text>
+                    // Préparer les données joueurs pour JS
+                    $playersJson = [];
+                    foreach ($onlineChars as $char) {
+                        $pct = wowToMapPct((float)$char['position_x'], (float)$char['position_y'], (int)$char['map']);
+                        $playersJson[] = [
+                            'name'  => htmlspecialchars($char['name']),
+                            'class' => $classes[$char['class']] ?? '?',
+                            'color' => $classColors[$char['class']] ?? '#8890ff',
+                            'level' => (int)$char['level'],
+                            'map'   => (int)$char['map'],
+                            'x'     => $pct['x'],
+                            'y'     => $pct['y'],
+                        ];
+                    }
+                    ?>
+                    <script>
+                    window._eonPlayers = <?= json_encode($playersJson) ?>;
+                    </script>
 
-                        <!-- Dalaran (Northrend) -->
-                        <g filter="url(#glow)">
-                            <circle cx="375" cy="45" r="3.5" fill="rgba(200,160,255,0.9)"/>
-                            <circle cx="375" cy="45" r="7" fill="none" stroke="rgba(200,160,255,0.4)" stroke-width="1">
-                                <animate attributeName="r" values="7;14;7" dur="3s" repeatCount="indefinite"/>
-                                <animate attributeName="stroke-opacity" values="0.4;0;0.4" dur="3s" repeatCount="indefinite"/>
-                            </circle>
-                        </g>
-                        <text x="375" y="36" font-family="serif" font-size="6" fill="rgba(220,180,255,0.7)"
-                              text-anchor="middle" letter-spacing="1">Dalaran</text>
-
-                        <!-- Eons Server point (centre océan, doré) -->
-                        <g filter="url(#softGlow)">
-                            <circle cx="320" cy="310" r="5" fill="rgba(240,192,96,0.95)"/>
-                            <circle cx="320" cy="310" r="10" fill="none" stroke="rgba(240,192,96,0.5)" stroke-width="1.2">
-                                <animate attributeName="r" values="10;22;10" dur="2s" repeatCount="indefinite"/>
-                                <animate attributeName="stroke-opacity" values="0.5;0;0.5" dur="2s" repeatCount="indefinite"/>
-                            </circle>
-                            <circle cx="320" cy="310" r="18" fill="none" stroke="rgba(240,192,96,0.2)" stroke-width="0.8">
-                                <animate attributeName="r" values="18;32;18" dur="2s" begin="0.5s" repeatCount="indefinite"/>
-                                <animate attributeName="stroke-opacity" values="0.2;0;0.2" dur="2s" begin="0.5s" repeatCount="indefinite"/>
-                            </circle>
-                        </g>
-                        <text x="320" y="295" font-family="serif" font-size="7" fill="rgba(240,192,96,0.9)"
-                              text-anchor="middle" letter-spacing="2" font-weight="bold">✦ EONS</text>
-
-                    </svg>
-                </div>
+                </div><!-- /realm-map-svg-wrap -->
 
                 <!-- Infos de connexion -->
                 <div class="realm-connect-info">
@@ -979,6 +974,142 @@ function copyRealmlist() {
             .catch(() => {});
     }
     setInterval(refresh, 30000);
+})();
+
+// ── Carte des joueurs ────────────────────────────────────────
+(function() {
+    const players = window._eonPlayers || [];
+    const canvas  = document.getElementById('playerMapCanvas');
+    const tooltip = document.getElementById('mapTooltip');
+    const wrap    = canvas ? canvas.closest('.realm-map-svg-wrap') : null;
+    if (!canvas || !wrap) return;
+
+    function resize() {
+        canvas.width  = wrap.offsetWidth;
+        canvas.height = wrap.offsetHeight;
+        draw();
+    }
+
+    function draw() {
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        players.forEach(p => {
+            const px = (p.x / 100) * W;
+            const py = (p.y / 100) * H;
+            const color = p.color;
+
+            // Anneau pulsant (sera animé via rAF)
+            ctx.beginPath();
+            ctx.arc(px, py, 10, 0, Math.PI * 2);
+            ctx.strokeStyle = color.replace(')', ',0.25)').replace('rgb(', 'rgba(').replace('#', '');
+            // Simple ring
+            const ring = ctx.createRadialGradient(px, py, 4, px, py, 12);
+            ring.addColorStop(0, color + '33');
+            ring.addColorStop(1, color + '00');
+            ctx.fillStyle = ring;
+            ctx.fill();
+
+            // Point central
+            ctx.beginPath();
+            ctx.arc(px, py, 5, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 12;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Petit point blanc central
+            ctx.beginPath();
+            ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.fill();
+        });
+    }
+
+    // Animation pulsante
+    let t = 0;
+    function animate() {
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        players.forEach(p => {
+            const px = (p.x / 100) * W;
+            const py = (p.y / 100) * H;
+            const color = p.color;
+            const pulse = (Math.sin(t * 2 + px * 0.01) * 0.5 + 0.5); // 0..1
+
+            // Anneau pulsant externe
+            const ringR = 10 + pulse * 8;
+            const ringAlpha = (1 - pulse) * 0.5;
+            ctx.beginPath();
+            ctx.arc(px, py, ringR, 0, Math.PI * 2);
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = ringAlpha;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // Halo soft
+            const grad = ctx.createRadialGradient(px, py, 0, px, py, 14);
+            grad.addColorStop(0, color + '55');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(px, py, 14, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Point central
+            ctx.beginPath();
+            ctx.arc(px, py, 5, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 14;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Éclat blanc
+            ctx.beginPath();
+            ctx.arc(px, py, 2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.95)';
+            ctx.fill();
+        });
+        t += 0.03;
+        requestAnimationFrame(animate);
+    }
+
+    // Tooltip au survol
+    wrap.addEventListener('mousemove', (e) => {
+        if (!tooltip) return;
+        const rect = wrap.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        const W = wrap.offsetWidth, H = wrap.offsetHeight;
+        let found = null;
+        players.forEach(p => {
+            const px = (p.x / 100) * W;
+            const py = (p.y / 100) * H;
+            const dist = Math.sqrt((mx - px) ** 2 + (my - py) ** 2);
+            if (dist < 16) found = p;
+        });
+        if (found) {
+            tooltip.innerHTML =
+                '<div class="tip-name">' + found.name + '</div>' +
+                '<div class="tip-class" style="color:' + found.color + '">' + found.class + ' — Niv. ' + found.level + '</div>';
+            tooltip.style.display = 'block';
+            tooltip.style.left = (mx + 14) + 'px';
+            tooltip.style.top  = (my - 10) + 'px';
+        } else {
+            tooltip.style.display = 'none';
+        }
+    });
+    wrap.addEventListener('mouseleave', () => {
+        if (tooltip) tooltip.style.display = 'none';
+    });
+
+    window.addEventListener('resize', resize);
+    resize();
+    animate();
 })();
 </script>
 </body>
