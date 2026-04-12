@@ -1,392 +1,467 @@
 <?php
 // ============================================================
-//  dashboard.php — Eons CMS
-//  Tableau de bord : compte, personnages, serveur, gestion
+//  dashboard.php — Eons CMS | Arcanic Theme Enhanced
 // ============================================================
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/srp6.php';
 
-if (empty($_SESSION['logged_in']) || empty($_SESSION['account_id'])) {
-    header('Location: auth.php');
-    exit;
-}
+if (empty($_SESSION['logged_in']) || empty($_SESSION['account_id'])) { header('Location: auth.php'); exit; }
 
-$accountId   = (int)$_SESSION['account_id'];
-$flashMsg    = '';
-$flashType   = 'info';
-$errors      = [];
+$accountId = (int)$_SESSION['account_id'];
+$flashMsg  = '';
+$flashType = 'info';
+$errors    = [];
 
-// ── Récupère les infos complètes du compte ────────────────────
 try {
     $db   = getAuthDB();
-    $stmt = $db->prepare("
-        SELECT id, username, email, joindate, last_login, last_ip,
-               online, expansion, failed_logins, locked, mutetime
-        FROM account WHERE id = :id LIMIT 1
-    ");
+    $stmt = $db->prepare("SELECT id, username, email, joindate, last_login, last_ip, online, expansion, failed_logins, locked, mutetime FROM account WHERE id = :id LIMIT 1");
     $stmt->execute([':id' => $accountId]);
     $account = $stmt->fetch();
     if (!$account) { session_destroy(); header('Location: auth.php'); exit; }
-} catch (PDOException $e) {
-    $account = null;
-    error_log('[AU Dashboard] DB error: ' . $e->getMessage());
-}
+} catch (PDOException $e) { $account = null; error_log('[AU Dashboard] DB error: ' . $e->getMessage()); }
 
-// ── Statut serveur (realm) ────────────────────────────────────
-// flag & 2 = REALM_FLAG_OFFLINE dans TrinityCore.
-// Joueurs connectés : comptés via online=1 dans auc_chars.characters (source fiable).
 $realmOnline  = false;
 $realmPlayers = 0;
 $realmName    = 'Eons';
 try {
     $stmt = $db->query("SELECT name, flag FROM realmlist LIMIT 1");
     $realm = $stmt->fetch();
-    if ($realm) {
-        $realmName   = $realm['name'];
-        $realmOnline = !(((int)$realm['flag']) & 2);
-    }
-} catch (PDOException $e) { /* realmlist inaccessible */ }
+    if ($realm) { $realmName = $realm['name']; $realmOnline = !(((int)$realm['flag']) & 2); }
+} catch (PDOException $e) {}
 
-// ── Personnages (auc_chars) ───────────────────────────────────
 $characters = [];
 try {
     $dsn   = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_CHARS_NAME . ';charset=utf8mb4';
-    $chars = new PDO($dsn, DB_USER, DB_PASS, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
-
-    // Nombre réel de joueurs connectés sur le serveur
+    $chars = new PDO($dsn, DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
     $realmPlayers = (int)$chars->query("SELECT COUNT(*) FROM characters WHERE online = 1")->fetchColumn();
-
-    // Personnages du compte (avec colonne online pour afficher le statut en jeu)
-    $stmt = $chars->prepare("
-        SELECT name, level, race, class, gender, zone, totaltime, money, online
-        FROM characters WHERE account = :aid AND deleteDate IS NULL ORDER BY level DESC LIMIT 10
-    ");
+    $stmt = $chars->prepare("SELECT name, level, race, class, gender, zone, totaltime, money, online FROM characters WHERE account = :aid AND deleteDate IS NULL ORDER BY level DESC LIMIT 10");
     $stmt->execute([':aid' => $accountId]);
     $characters = $stmt->fetchAll();
-} catch (PDOException $e) {
-    error_log('[AU Dashboard] Chars DB error: ' . $e->getMessage());
-}
+} catch (PDOException $e) { error_log('[AU Dashboard] Chars DB: ' . $e->getMessage()); }
 
-// ── Traitement formulaire changement de mot de passe ─────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) {
-        $errors[] = 'Token CSRF invalide.';
-    } else {
-        // ── Changer le mot de passe ───────────────────────────
+    if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) { $errors[] = 'Token CSRF invalide.'; }
+    else {
         if ($_POST['action'] === 'change_password') {
-            $currentPw  = $_POST['current_password'] ?? '';
-            $newPw      = $_POST['new_password']     ?? '';
-            $confirmPw  = $_POST['confirm_password'] ?? '';
-
-            if (strlen($newPw) < 6) {
-                $errors[] = 'Le nouveau mot de passe doit contenir au moins 6 caractères.';
-            } elseif ($newPw !== $confirmPw) {
-                $errors[] = 'Les mots de passe ne correspondent pas.';
-            } else {
-                // Vérifier l'ancien mot de passe
-                $stmt = $db->prepare("SELECT salt, verifier FROM account WHERE id = :id");
-                $stmt->execute([':id' => $accountId]);
-                $row = $stmt->fetch();
+            $currentPw = $_POST['current_password'] ?? ''; $newPw = $_POST['new_password'] ?? ''; $confirmPw = $_POST['confirm_password'] ?? '';
+            if (strlen($newPw) < 6) $errors[] = 'Le nouveau mot de passe doit contenir au moins 6 caractères.';
+            elseif ($newPw !== $confirmPw) $errors[] = 'Les mots de passe ne correspondent pas.';
+            else {
+                $stmt = $db->prepare("SELECT salt, verifier FROM account WHERE id = :id"); $stmt->execute([':id' => $accountId]); $row = $stmt->fetch();
                 if ($row && SRP6::verifyPassword($account['username'], $currentPw, $row['salt'], $row['verifier'])) {
-                    $salt = SRP6::generateSalt();
-                    $srp  = SRP6::calcVerifier($account['username'], $newPw, $salt);
-                    $upd  = $db->prepare("UPDATE account SET salt=:s, verifier=:v WHERE id=:id");
-                    $upd->execute([':s' => $srp['salt'], ':v' => $srp['verifier'], ':id' => $accountId]);
-                    $flashMsg  = '✦ Mot de passe modifié avec succès !';
-                    $flashType = 'success';
-                } else {
-                    $errors[] = 'Mot de passe actuel incorrect.';
-                }
+                    $salt = SRP6::generateSalt(); $srp = SRP6::calcVerifier($account['username'], $newPw, $salt);
+                    $upd = $db->prepare("UPDATE account SET salt=:s, verifier=:v WHERE id=:id"); $upd->execute([':s'=>$srp['salt'],':v'=>$srp['verifier'],':id'=>$accountId]);
+                    $flashMsg = '✦ Mot de passe modifié avec succès !'; $flashType = 'success';
+                } else { $errors[] = 'Mot de passe actuel incorrect.'; }
             }
         }
-
-        // ── Changer l'email ───────────────────────────────────
         if ($_POST['action'] === 'change_email') {
-            $newEmail = trim($_POST['new_email'] ?? '');
-            $pw       = $_POST['email_password'] ?? '';
-
-            if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
-                $errors[] = 'Adresse e-mail invalide.';
-            } else {
-                $stmt = $db->prepare("SELECT salt, verifier FROM account WHERE id = :id");
-                $stmt->execute([':id' => $accountId]);
-                $row = $stmt->fetch();
+            $newEmail = trim($_POST['new_email'] ?? ''); $pw = $_POST['email_password'] ?? '';
+            if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) $errors[] = 'Adresse e-mail invalide.';
+            else {
+                $stmt = $db->prepare("SELECT salt, verifier FROM account WHERE id = :id"); $stmt->execute([':id' => $accountId]); $row = $stmt->fetch();
                 if ($row && SRP6::verifyPassword($account['username'], $pw, $row['salt'], $row['verifier'])) {
-                    $upd = $db->prepare("UPDATE account SET email=:e WHERE id=:id");
-                    $upd->execute([':e' => strtolower($newEmail), ':id' => $accountId]);
-                    $_SESSION['account_email'] = strtolower($newEmail);
-                    $account['email'] = strtolower($newEmail);
-                    $flashMsg  = '✦ Adresse e-mail mise à jour !';
-                    $flashType = 'success';
-                } else {
-                    $errors[] = 'Mot de passe incorrect.';
-                }
+                    $upd = $db->prepare("UPDATE account SET email=:e WHERE id=:id"); $upd->execute([':e'=>strtolower($newEmail),':id'=>$accountId]);
+                    $_SESSION['account_email'] = strtolower($newEmail); $account['email'] = strtolower($newEmail);
+                    $flashMsg = '✦ Adresse e-mail mise à jour !'; $flashType = 'success';
+                } else { $errors[] = 'Mot de passe incorrect.'; }
             }
         }
     }
-    // Régénérer le token CSRF
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
-
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
+if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 $csrfToken = $_SESSION['csrf_token'];
 
 // ── Helpers ───────────────────────────────────────────────────
-$classNames = [
-    1=>'Guerrier', 2=>'Paladin', 3=>'Chasseur', 4=>'Voleur',
-    5=>'Prêtre', 6=>'Chevalier de la mort', 7=>'Chaman',
-    8=>'Mage', 9=>'Démoniste', 11=>'Druide', 14=>'Moine'
-];
-$classColors = [
-    1=>'#C69B3A', 2=>'#F48CBA', 3=>'#AAD372', 4=>'#FFF468',
-    5=>'#FFFFFF', 6=>'#C41E3A', 7=>'#0070DD', 8=>'#3FC7EB',
-    9=>'#8788EE', 11=>'#FF7C0A', 14=>'#FFF468'
-];
-$classIcons = [
-    1=>'⚔', 2=>'🛡', 3=>'🏹', 4=>'🗡',
-    5=>'✝', 6=>'💀', 7=>'⚡', 8=>'🔥',
-    9=>'👁', 11=>'🌿', 14=>'🗡'
-];
-$raceNames = [
-    1=>'Humain', 2=>'Orc', 3=>'Nain', 4=>'Elfe de la nuit',
-    5=>'Mort-vivant', 6=>'Tauren', 7=>'Gnome', 8=>'Troll',
-    10=>'Elfe du sang', 11=>'Draeneï'
-];
-$expansionNames = [0=>'Vanilla', 1=>'The Burning Crusade', 2=>'Wrath of the Lich King'];
+$classNames = [1=>'Guerrier',2=>'Paladin',3=>'Chasseur',4=>'Voleur',5=>'Prêtre',6=>'Chevalier de la mort',7=>'Chaman',8=>'Mage',9=>'Démoniste',11=>'Druide'];
+$classIcons = [1=>'⚔',2=>'🛡',3=>'🏹',4=>'🗡',5=>'✝',6=>'💀',7=>'⚡',8=>'🔥',9=>'👁',11=>'🌿'];
+$classColors = [1=>'#c79c6e',2=>'#f58cba',3=>'#abd473',4=>'#fff569',5=>'#ffffff',6=>'#c41f3b',7=>'#0070de',8=>'#69ccf0',9=>'#9482c9',11=>'#ff7d0a'];
+$raceNames = [1=>'Humain',2=>'Orc',3=>'Nain',4=>'Elfe de la nuit',5=>'Mort-vivant',6=>'Tauren',7=>'Gnome',8=>'Troll',10=>'Elfe du sang',11=>'Draeneï'];
+$expansionNames = [0=>'Classic',1=>'TBC',2=>'WotLK'];
 
+function formatTime(int $secs): string {
+    $d = intdiv($secs, 86400); $h = intdiv($secs % 86400, 3600);
+    return $d > 0 ? "{$d}j {$h}h" : ($h > 0 ? "{$h}h " . intdiv($secs % 3600, 60) . 'min' : intdiv($secs, 60) . 'min');
+}
 function formatMoney(int $copper): string {
-    $g = intdiv($copper, 10000);
-    $s = intdiv($copper % 10000, 100);
-    $c = $copper % 100;
+    $g = intdiv($copper, 10000); $s = intdiv($copper % 10000, 100); $c = $copper % 100;
     $out = '';
-    if ($g > 0) $out .= "<span class='gold-coin'>{$g}Po</span> ";
-    if ($s > 0) $out .= "<span class='silver-coin'>{$s}Pa</span> ";
-    $out .= "<span class='copper-coin'>{$c}Pc</span>";
-    return $out;
+    if ($g) $out .= "<span style='color:#f0c060'>{$g}or</span> ";
+    if ($s) $out .= "<span style='color:#c0c0c0'>{$s}ar</span> ";
+    if ($c || !$out) $out .= "<span style='color:#cd7f32'>{$c}cu</span>";
+    return trim($out);
 }
 
-function formatTime(int $seconds): string {
-    $d = intdiv($seconds, 86400);
-    $h = intdiv($seconds % 86400, 3600);
-    $m = intdiv($seconds % 3600, 60);
-    if ($d > 0) return "{$d}j {$h}h";
-    if ($h > 0) return "{$h}h {$m}m";
-    return "{$m}m";
-}
-
-$pageTitle = 'Tableau de bord — Eons';
+$pageTitle = 'Tableau de Bord — Eons';
 require_once __DIR__ . '/header.php';
 ?>
+<style>
+/* ─── DASHBOARD LAYOUT ─────────────────────────────────────── */
+.dashboard {
+    position: relative; z-index: 10;
+    padding: 5.5rem 2rem 4rem;
+    max-width: 1300px;
+    margin: 0 auto;
+}
 
-    <style>
-        /* ─── Variables supplémentaires ─── */
-        :root {
-            --panel-bg:     rgba(11,13,36,.85);
-            --panel-border: rgba(200,151,42,.15);
-            --panel-border-arcane: rgba(123,130,255,.15);
-        }
+.dash-header {
+    margin-bottom: 2.5rem;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem;
+}
 
-        body::after {
-            content:''; position:fixed; inset:0; z-index:1; pointer-events:none;
-            background:
-                radial-gradient(ellipse 60% 50% at 20% 20%, rgba(30,33,96,.25) 0%, transparent 70%),
-                radial-gradient(ellipse 40% 40% at 80% 80%, rgba(98,54,212,.12) 0%, transparent 70%),
-                radial-gradient(ellipse 30% 30% at 50% 100%, rgba(200,151,42,.07) 0%, transparent 60%);
-        }
+.dash-greeting {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    font-weight: 700;
+    color: var(--white);
+    text-shadow: 0 0 30px rgba(136,144,255,0.25);
+}
+.dash-greeting span { color: var(--gold-bright); text-shadow: 0 0 20px rgba(240,192,96,0.4); }
 
-        main { position:relative; z-index:2; flex:1; padding:5rem 2rem 2.5rem; max-width:1280px; margin:0 auto; width:100%; }
+.dash-breadcrumb {
+    font-family: 'Cinzel', serif; font-size: 0.6rem;
+    letter-spacing: 0.18em; color: var(--silver);
+    text-transform: uppercase; opacity: 0.6;
+}
+.dash-breadcrumb a { color: var(--arcane-bright); text-decoration: none; }
 
-        .page-header { margin-bottom:2.5rem; }
-        .page-title {
-            font-family:'Cinzel Decorative',serif; font-size:1.6rem; font-weight:700;
-            color:var(--white); text-shadow:0 0 30px rgba(200,151,42,.2);
-            display:flex; align-items:center; gap:.75rem;
-        }
-        .page-title .gem { width:8px; height:8px; background:var(--gold); transform:rotate(45deg); box-shadow:0 0 12px rgba(200,151,42,.8); flex-shrink:0; }
-        .page-subtitle { font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.2em; text-transform:uppercase; color:var(--silver); margin-top:.5rem; }
+/* ─── ALERTS ────────────────────────────────────────────────── */
+.dash-alert {
+    padding: 1rem 1.4rem; margin-bottom: 1.8rem;
+    border-left: 3px solid; font-size: 0.92rem;
+    display: flex; align-items: center; gap: 0.8rem;
+    background: rgba(9,12,34,0.7); backdrop-filter: blur(10px);
+}
+.dash-alert-success { border-color: var(--success); color: var(--success); }
+.dash-alert-error   { border-color: var(--error);   color: #ff9999; }
 
-        .alert { padding:.9rem 1.2rem; margin-bottom:1.5rem; font-size:.95rem; line-height:1.5; clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%); }
-        .alert-error   { background:rgba(255,95,95,.08);  border:1px solid rgba(255,95,95,.3);  color:var(--error); }
-        .alert-success { background:rgba(95,255,176,.07); border:1px solid rgba(95,255,176,.3); color:var(--success); }
-        .alert-info    { background:rgba(123,130,255,.07);border:1px solid rgba(123,130,255,.25);color:var(--info); }
+/* ─── GRID ──────────────────────────────────────────────────── */
+.dash-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 1.5rem;
+}
 
-        .dashboard-grid {
-            display:grid;
-            grid-template-columns: 340px 1fr;
-            grid-template-rows: auto auto auto;
-            gap:1.5rem;
-        }
-        @media(max-width:900px) { .dashboard-grid { grid-template-columns:1fr; } }
+/* ─── PANEL ─────────────────────────────────────────────────── */
+.panel {
+    background: rgba(6,8,26,0.78);
+    border: 1px solid rgba(136,144,255,0.12);
+    position: relative; overflow: hidden;
+    backdrop-filter: blur(16px);
+    transition: border-color 0.3s;
+}
+.panel:hover { border-color: rgba(136,144,255,0.22); }
 
-        .panel {
-            background:var(--panel-bg);
-            border:1px solid var(--panel-border);
-            backdrop-filter:blur(10px);
-            clip-path:polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
-            position:relative;
-            animation:fadeUp .6s ease forwards;
-            animation-fill-mode:both;
-        }
-        .panel::before { content:''; position:absolute; top:0; right:0; width:16px; height:16px; background:rgba(200,151,42,.2); clip-path:polygon(0 0,100% 0,100% 100%); }
-        .panel::after  { content:''; position:absolute; bottom:0; left:0; width:16px; height:16px; background:rgba(123,130,255,.1); clip-path:polygon(0 0,0 100%,100% 100%); }
-        .panel.arcane-border { border-color:var(--panel-border-arcane); }
-        .panel:nth-child(1){animation-delay:.05s} .panel:nth-child(2){animation-delay:.1s}
-        .panel:nth-child(3){animation-delay:.15s} .panel:nth-child(4){animation-delay:.2s}
-        .panel:nth-child(5){animation-delay:.25s}
+/* Animated corner accent */
+.panel::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 20px; height: 20px;
+    border-top: 1px solid var(--gold-bright);
+    border-left: 1px solid var(--gold-bright);
+    opacity: 0.5;
+}
+.panel::after {
+    content: '';
+    position: absolute; bottom: 0; right: 0;
+    width: 20px; height: 20px;
+    border-bottom: 1px solid var(--arcane-bright);
+    border-right: 1px solid var(--arcane-bright);
+    opacity: 0.4;
+}
 
-        .panel-header { padding:1.2rem 1.5rem .9rem; border-bottom:1px solid rgba(200,151,42,.1); display:flex; align-items:center; gap:.7rem; }
-        .panel-icon { font-size:1.1rem; opacity:.9; }
-        .panel-title { font-family:'Cinzel',serif; font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:var(--silver); }
-        .panel-title span { color:var(--gold-bright); }
-        .panel-body { padding:1.4rem 1.5rem; }
+.panel-arcane { border-color: rgba(136,144,255,0.2); }
+.panel-arcane::before { border-color: var(--arcane-bright); opacity: 0.6; }
 
-        .account-avatar { width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, var(--arcane) 0%, var(--void-purple) 100%); border:2px solid rgba(200,151,42,.3); display:flex; align-items:center; justify-content:center; font-size:1.6rem; margin:0 auto 1.2rem; box-shadow:0 0 20px rgba(123,130,255,.2); }
-        .account-name { font-family:'Cinzel Decorative',serif; font-size:1.1rem; color:var(--white); text-align:center; margin-bottom:.25rem; }
-        .account-tag { text-align:center; font-size:.82rem; color:var(--silver); font-style:italic; margin-bottom:1.4rem; }
-        .account-badge { display:inline-flex; align-items:center; gap:.3rem; font-family:'Cinzel',serif; font-size:.58rem; letter-spacing:.15em; text-transform:uppercase; padding:.25rem .7rem; margin:0 auto .3rem; border:1px solid; }
-        .badge-expansion { color:var(--arcane-bright); border-color:rgba(123,130,255,.3); background:rgba(123,130,255,.06); }
-        .badge-online    { color:var(--success); border-color:rgba(95,255,176,.3); background:rgba(95,255,176,.05); }
-        .badge-offline   { color:var(--silver); border-color:rgba(168,180,208,.2); background:rgba(168,180,208,.04); }
-        .badges { display:flex; flex-wrap:wrap; gap:.4rem; justify-content:center; margin-bottom:1.4rem; }
+.panel-header {
+    display: flex; align-items: center; gap: 0.8rem;
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid rgba(136,144,255,0.08);
+    background: rgba(9,12,34,0.5);
+}
+.panel-icon { font-size: 1.1rem; filter: drop-shadow(0 0 8px rgba(136,144,255,0.5)); }
+.panel-title {
+    font-family: 'Cinzel', serif; font-size: 0.75rem;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--silver-bright);
+    font-weight: 600;
+}
+.panel-title span { color: var(--gold-bright); }
 
-        .info-list { list-style:none; }
-        .info-list li { display:flex; justify-content:space-between; align-items:center; padding:.6rem 0; border-bottom:1px solid rgba(123,130,255,.07); font-size:.9rem; gap:1rem; }
-        .info-list li:last-child { border-bottom:none; }
-        .info-label { font-family:'Cinzel',serif; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--silver); flex-shrink:0; }
-        .info-value { color:var(--white); text-align:right; font-size:.88rem; }
-        .info-value.gold { color:var(--gold-bright); }
+.panel-body { padding: 1.5rem; }
 
-        .server-status { display:flex; align-items:center; gap:1rem; margin-bottom:1.2rem; padding:1rem 1.2rem; background:rgba(7,9,26,.5); border:1px solid rgba(123,130,255,.1); }
-        .status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; animation:pulse 2s ease-in-out infinite; }
-        .status-dot.online  { background:var(--success); box-shadow:0 0 10px rgba(95,255,176,.5); }
-        .status-dot.offline { background:var(--error);   box-shadow:0 0 10px rgba(255,95,95,.4); animation:none; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-        .status-label { font-family:'Cinzel',serif; font-size:.7rem; letter-spacing:.15em; text-transform:uppercase; }
-        .status-label.online  { color:var(--success); }
-        .status-label.offline { color:var(--error); }
-        .status-realm { color:var(--silver); font-size:.8rem; margin-left:auto; }
-        .server-stats { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; }
-        .stat-box { background:rgba(7,9,26,.5); border:1px solid rgba(200,151,42,.1); padding:.9rem 1rem; text-align:center; }
-        .stat-number { font-family:'Cinzel Decorative',serif; font-size:1.6rem; color:var(--gold-bright); line-height:1; margin-bottom:.25rem; }
-        .stat-desc { font-family:'Cinzel',serif; font-size:.58rem; letter-spacing:.15em; text-transform:uppercase; color:var(--silver); }
+/* ─── ACCOUNT PANEL ─────────────────────────────────────────── */
+.account-avatar {
+    width: 70px; height: 70px;
+    background: linear-gradient(135deg, rgba(20,24,80,0.8), rgba(90,48,212,0.4));
+    border: 1px solid rgba(136,144,255,0.3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem;
+    margin: 0 auto 1rem;
+    box-shadow: 0 0 30px rgba(136,144,255,0.15), inset 0 0 20px rgba(136,144,255,0.05);
+    animation: orbPulse 5s ease-in-out infinite;
+}
+@keyframes orbPulse {
+    0%,100% { box-shadow: 0 0 30px rgba(136,144,255,0.15); }
+    50%      { box-shadow: 0 0 50px rgba(136,144,255,0.28); }
+}
 
-        .chars-grid { display:flex; flex-direction:column; gap:.6rem; }
-        .char-card { display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:.9rem; padding:.8rem 1rem; background:rgba(7,9,26,.5); border:1px solid rgba(123,130,255,.08); transition:border-color .3s, background .3s; cursor:default; }
-        .char-card:hover { border-color:rgba(123,130,255,.25); background:rgba(30,33,96,.15); }
-        .char-icon { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; border:1px solid; flex-shrink:0; }
-        .char-info .char-name { font-family:'Cinzel',serif; font-size:.82rem; color:var(--white); margin-bottom:.15rem; }
-        .char-info .char-meta { font-size:.78rem; color:var(--silver); }
-        .char-info .char-meta span { margin-right:.5rem; }
-        .char-right { text-align:right; flex-shrink:0; }
-        .char-level { font-family:'Cinzel Decorative',serif; font-size:1.1rem; color:var(--gold-bright); line-height:1; }
-        .char-level-label { font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--silver); }
-        .char-time { font-size:.72rem; color:var(--silver); margin-top:.15rem; }
-        .empty-chars { text-align:center; padding:2.5rem 1rem; color:var(--silver); font-style:italic; }
-        .empty-chars .empty-icon { font-size:2.2rem; margin-bottom:.8rem; opacity:.4; }
-        .empty-chars p { font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.15em; text-transform:uppercase; }
+.account-name {
+    font-family: 'Cinzel Decorative', serif; font-size: 1.1rem; font-weight: 700;
+    color: var(--gold-bright); text-align: center; margin-bottom: 0.25rem;
+    text-shadow: 0 0 20px rgba(240,192,96,0.35);
+}
+.account-email {
+    font-size: 0.8rem; color: var(--silver); text-align: center; margin-bottom: 1rem;
+    font-style: italic; opacity: 0.7;
+}
 
-        .tabs { display:flex; gap:0; margin-bottom:1.4rem; border-bottom:1px solid rgba(123,130,255,.1); }
-        .tab-btn { font-family:'Cinzel',serif; font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; padding:.65rem 1.1rem; background:none; border:none; cursor:pointer; color:var(--silver); border-bottom:2px solid transparent; margin-bottom:-1px; transition:color .3s, border-color .3s; }
-        .tab-btn:hover { color:var(--arcane-bright); }
-        .tab-btn.active { color:var(--gold-bright); border-color:var(--gold); }
-        .tab-panel { display:none; }
-        .tab-panel.active { display:block; }
+.badges { display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.2rem; }
+.badge {
+    font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.12em;
+    padding: 0.25rem 0.6rem; text-transform: uppercase;
+    border: 1px solid; clip-path: polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%);
+}
+.badge-expansion { border-color: rgba(240,192,96,0.4); color: var(--gold-bright); background: rgba(240,192,96,0.06); }
+.badge-online    { border-color: rgba(95,255,176,0.4); color: var(--success); background: rgba(95,255,176,0.06); }
+.badge-offline   { border-color: rgba(168,180,208,0.2); color: var(--silver); background: transparent; opacity: 0.6; }
 
-        .form-group { margin-bottom:1.1rem; }
-        .form-label { display:block; font-family:'Cinzel',serif; font-size:.62rem; letter-spacing:.18em; text-transform:uppercase; color:var(--silver); margin-bottom:.4rem; }
-        .input-wrap { position:relative; }
-        .input-icon { position:absolute; left:.9rem; top:50%; transform:translateY(-50%); font-size:.85rem; pointer-events:none; opacity:.45; }
-        input[type="password"], input[type="email"] {
-            width:100%; background:rgba(7,9,26,.8); border:1px solid rgba(200,151,42,.15);
-            color:var(--white); font-family:'Crimson Pro',serif; font-size:1rem;
-            padding:.65rem 1rem .65rem 2.3rem; outline:none;
-            transition:border-color .3s, box-shadow .3s;
-            clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);
-        }
-        input:focus { border-color:rgba(200,151,42,.45); box-shadow:0 0 12px rgba(200,151,42,.1); }
-        input::placeholder { color:rgba(168,180,208,.3); }
+.info-sep { height: 1px; background: linear-gradient(90deg, transparent, rgba(136,144,255,0.2), transparent); margin: 1.2rem 0; }
 
-        .btn-primary { width:100%; padding:.8rem; font-family:'Cinzel',serif; font-size:.72rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; background:linear-gradient(135deg, #b07820 0%, #e8b840 50%, #b07820 100%); color:#1a1000; border:none; cursor:pointer; clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%); box-shadow:0 4px 20px rgba(200,151,42,.25); transition:transform .2s, box-shadow .3s; position:relative; overflow:hidden; }
-        .btn-primary::before { content:''; position:absolute; inset:0; background:rgba(255,255,255,.12); transform:translateX(-100%) skewX(-15deg); transition:transform .4s; }
-        .btn-primary:hover::before { transform:translateX(120%) skewX(-15deg); }
-        .btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 28px rgba(200,151,42,.45); }
+.info-list { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+.info-list li { display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; }
+.info-label { color: var(--silver); opacity: 0.65; }
+.info-value { color: var(--silver-bright); font-weight: 400; }
+.info-value.gold { color: var(--gold-bright); }
 
-        .btn-arcane-form { width:100%; padding:.8rem; font-family:'Cinzel',serif; font-size:.72rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; background:linear-gradient(135deg, var(--arcane) 0%, var(--void-purple) 100%); color:var(--white); border:none; cursor:pointer; clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%); box-shadow:0 4px 20px rgba(98,54,212,.3); transition:transform .2s, box-shadow .3s; position:relative; overflow:hidden; }
-        .btn-arcane-form::before { content:''; position:absolute; inset:0; background:rgba(255,255,255,.07); transform:translateX(-100%) skewX(-15deg); transition:transform .4s; }
-        .btn-arcane-form:hover::before { transform:translateX(120%) skewX(-15deg); }
-        .btn-arcane-form:hover { transform:translateY(-2px); box-shadow:0 6px 28px rgba(155,111,255,.45); }
+.panel-logout {
+    display: block; text-align: center; margin-top: 1.5rem;
+    font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: 0.15em;
+    color: rgba(168,180,208,0.45); text-decoration: none; text-transform: uppercase;
+    transition: color 0.3s;
+}
+.panel-logout:hover { color: var(--error); }
 
-        .gold-coin   { color:#f0c060; font-weight:600; }
-        .silver-coin { color:#c0cce0; }
-        .copper-coin { color:#c87030; }
+/* ─── CHARACTER CARDS ───────────────────────────────────────── */
+.chars-list { display: flex; flex-direction: column; gap: 0.85rem; }
 
-        .section-divider { display:flex; align-items:center; gap:.6rem; margin:1.2rem 0; }
-        .section-divider::before,.section-divider::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(200,151,42,.2)); }
-        .section-divider::after { background:linear-gradient(90deg,rgba(200,151,42,.2),transparent); }
-        .section-divider-gem { width:5px; height:5px; background:var(--gold); transform:rotate(45deg); box-shadow:0 0 6px rgba(200,151,42,.6); }
+.char-card {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0.9rem 1rem;
+    background: rgba(9,12,34,0.6);
+    border: 1px solid rgba(136,144,255,0.08);
+    transition: border-color 0.3s, background 0.3s, transform 0.2s;
+    position: relative; overflow: hidden;
+}
+.char-card:hover {
+    border-color: rgba(136,144,255,0.22);
+    background: rgba(12,16,44,0.7);
+    transform: translateX(3px);
+}
+.char-card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 2px; background: var(--class-color, var(--arcane-bright));
+    opacity: 0.7;
+}
 
-        .col-span-full { grid-column:1 / -1; }
-        @media(max-width:640px) { main { padding:5rem 1rem 1.5rem; } .server-stats { grid-template-columns:1fr; } }
-    </style>
+.char-icon {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; flex-shrink: 0;
+    border: 1px solid; background: rgba(9,12,34,0.8);
+}
 
-<main>
-    <div class="page-header">
-        <h1 class="page-title">
-            <span class="gem"></span>
-            Tableau de Bord
-        </h1>
-        <p class="page-subtitle">Gérez votre compte et vos héros d'Eons</p>
+.char-info { flex: 1; min-width: 0; }
+.char-name { font-family: 'Cinzel', serif; font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.char-meta { font-size: 0.75rem; color: var(--silver); opacity: 0.7; margin-top: 0.15rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.char-money { font-size: 0.72rem; margin-top: 0.2rem; }
+.char-ingame {
+    font-size: 0.55rem; font-family: 'Cinzel', serif; letter-spacing: 0.12em;
+    color: var(--success); margin-left: 0.4rem; vertical-align: middle;
+    animation: dotBlink 2s infinite;
+}
+@keyframes dotBlink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.char-right { text-align: center; flex-shrink: 0; }
+.char-level { font-family: 'Cinzel Decorative', serif; font-size: 1.3rem; font-weight: 700; color: var(--white); line-height: 1; }
+.char-level-lbl { font-size: 0.55rem; letter-spacing: 0.15em; color: var(--silver); opacity: 0.5; text-transform: uppercase; font-family: 'Cinzel', serif; }
+.char-time { font-size: 0.65rem; color: var(--silver); opacity: 0.5; margin-top: 0.2rem; }
+
+.empty-chars {
+    text-align: center; padding: 2.5rem 1rem;
+    font-family: 'Cinzel', serif; font-size: 0.7rem;
+    letter-spacing: 0.15em; color: var(--silver); opacity: 0.5;
+}
+.empty-chars-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; filter: grayscale(1); }
+
+/* ─── SERVER STATUS ─────────────────────────────────────────── */
+.server-status {
+    display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem;
+}
+.status-indicator {
+    width: 10px; height: 10px; border-radius: 50%;
+    flex-shrink: 0;
+}
+.status-indicator.online {
+    background: var(--success);
+    box-shadow: 0 0 10px rgba(95,255,176,0.8);
+    animation: dotBlink 2s infinite;
+}
+.status-indicator.offline {
+    background: rgba(168,180,208,0.3);
+}
+.status-text { font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.12em; }
+.status-text.online { color: var(--success); }
+.status-text.offline { color: var(--silver); opacity: 0.5; }
+.status-realm { font-size: 0.8rem; color: var(--silver); margin-left: auto; opacity: 0.6; }
+
+.server-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+.stat-box {
+    background: rgba(9,12,34,0.6);
+    border: 1px solid rgba(136,144,255,0.08);
+    padding: 0.9rem; text-align: center;
+}
+.stat-num {
+    font-family: 'Cinzel Decorative', serif; font-size: 1.4rem; font-weight: 700;
+    color: var(--white); line-height: 1;
+    text-shadow: 0 0 20px rgba(136,144,255,0.3);
+}
+.stat-desc { font-size: 0.6rem; color: var(--silver); opacity: 0.55; margin-top: 0.3rem; letter-spacing: 0.1em; font-family: 'Cinzel', serif; text-transform: uppercase; }
+
+/* ─── ACCOUNT MANAGEMENT TABS ───────────────────────────────── */
+.mgmt-tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(136,144,255,0.1); margin-bottom: 1.8rem; }
+.mgmt-tab {
+    font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 0.14em;
+    text-transform: uppercase; padding: 0.7rem 1.2rem;
+    background: none; border: none; cursor: pointer; color: var(--silver);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color 0.3s, border-color 0.3s;
+}
+.mgmt-tab:hover { color: var(--arcane-bright); }
+.mgmt-tab.active { color: var(--gold-bright); border-bottom-color: var(--gold-bright); }
+
+.mgmt-panel { display: none; max-width: 440px; }
+.mgmt-panel.active { display: block; }
+
+.form-group { margin-bottom: 1.2rem; }
+.form-label {
+    display: block; font-family: 'Cinzel', serif; font-size: 0.58rem;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--silver); margin-bottom: 0.4rem;
+}
+.input-wrap { position: relative; }
+.input-icon { position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 2; }
+.input-wrap input {
+    width: 100%; background: rgba(9,12,34,0.8); border: 1px solid rgba(136,144,255,0.18);
+    color: var(--white); font-family: 'Crimson Pro', serif; font-size: 0.95rem;
+    padding: 0.7rem 0.9rem 0.7rem 2.4rem; outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    clip-path: polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);
+}
+.input-wrap input::placeholder { color: rgba(168,180,208,0.35); }
+.input-wrap input:focus { border-color: rgba(136,144,255,0.5); box-shadow: 0 0 16px rgba(136,144,255,0.07); }
+.input-wrap::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(136,144,255,0.5), transparent);
+    opacity: 0; transition: opacity 0.3s;
+}
+.input-wrap:focus-within::after { opacity: 1; }
+
+.btn-primary {
+    font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.18em;
+    text-transform: uppercase; padding: 0.75rem 1.6rem; border: none; cursor: pointer;
+    background: linear-gradient(135deg, #9a6418, #d4a030, #f0c060, #d4a030, #9a6418);
+    color: #1a0e00; font-weight: 800;
+    clip-path: polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+    transition: box-shadow 0.3s, transform 0.2s;
+    box-shadow: 0 2px 20px rgba(200,151,42,0.35);
+}
+.btn-primary:hover { box-shadow: 0 4px 32px rgba(200,151,42,0.6); transform: translateY(-2px); }
+
+.btn-arcane-form {
+    font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.18em;
+    text-transform: uppercase; padding: 0.75rem 1.6rem; border: none; cursor: pointer;
+    background: linear-gradient(135deg, var(--arcane), var(--void-purple));
+    color: var(--white);
+    clip-path: polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+    transition: box-shadow 0.3s, transform 0.2s;
+    box-shadow: 0 2px 20px rgba(90,48,212,0.4);
+}
+.btn-arcane-form:hover { box-shadow: 0 4px 32px rgba(160,112,255,0.6); transform: translateY(-2px); }
+
+.col-span-full { grid-column: 1 / -1; }
+
+/* ─── ERROR LIST ────────────────────────────────────────────── */
+.errors-box {
+    background: rgba(255,95,95,0.07); border-left: 3px solid rgba(255,95,95,0.6);
+    padding: 0.9rem 1.2rem; margin-bottom: 1.5rem; color: #ff9999; font-size: 0.88rem;
+}
+.errors-box ul { margin: 0; padding-left: 1.2rem; }
+
+@media (max-width: 1024px) { .dash-grid { grid-template-columns: 1fr; } .char-card { transform: none !important; } }
+@media (max-width: 600px) { .dashboard { padding: 4.5rem 1rem 3rem; } .panel-body { padding: 1.2rem; } }
+</style>
+
+<?php if ($flashMsg): ?>
+<div class="flash-banner"><?= htmlspecialchars($flashMsg) ?></div>
+<?php endif; ?>
+
+<main class="dashboard">
+    <div class="dash-header reveal">
+        <div>
+            <p class="dash-breadcrumb"><a href="index.php">Eons</a> &nbsp;›&nbsp; Tableau de Bord</p>
+            <h1 class="dash-greeting">Bienvenue, <span><?= htmlspecialchars($account['username'] ?? '') ?></span></h1>
+        </div>
+        <a href="logout.php" class="btn-logout-nav" style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.14em;color:rgba(168,180,208,.45);text-decoration:none;text-transform:uppercase;transition:color .3s;">⚔ Déconnexion</a>
     </div>
 
-    <?php if ($flashMsg): ?>
-    <div class="alert alert-<?= $flashType ?>"><?= htmlspecialchars($flashMsg) ?></div>
-    <?php endif; ?>
     <?php if (!empty($errors)): ?>
-    <div class="alert alert-error">
-        <?php foreach ($errors as $e): ?><?= htmlspecialchars($e) ?><br><?php endforeach; ?>
-    </div>
+    <div class="errors-box"><ul><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul></div>
     <?php endif; ?>
 
-    <div class="dashboard-grid">
+    <div class="dash-grid">
 
-        <!-- Panel Compte -->
-        <div class="panel">
+        <!-- ACCOUNT PANEL -->
+        <div class="panel reveal" style="grid-row: span 2;">
             <div class="panel-header">
-                <span class="panel-icon">⚔</span>
+                <span class="panel-icon">👤</span>
                 <span class="panel-title">Mon <span>Compte</span></span>
             </div>
-            <div class="panel-body">
+            <div class="panel-body" style="text-align:center;">
                 <div class="account-avatar">⚔</div>
-                <div class="account-name"><?= htmlspecialchars($account['username'] ?? '') ?></div>
-                <div class="account-tag"><?= htmlspecialchars($account['email'] ?? '') ?></div>
+                <p class="account-name"><?= htmlspecialchars($account['username'] ?? '') ?></p>
+                <p class="account-email"><?= htmlspecialchars($account['email'] ?? '') ?></p>
+
                 <div class="badges">
-                    <span class="account-badge badge-expansion">✦ <?= $expansionNames[(int)($account['expansion'] ?? 2)] ?? 'WotLK' ?></span>
+                    <span class="badge badge-expansion">✦ <?= $expansionNames[(int)($account['expansion'] ?? 2)] ?? 'WotLK' ?></span>
                     <?php if ((int)($account['online'] ?? 0) === 1): ?>
-                    <span class="account-badge badge-online">● En ligne</span>
+                    <span class="badge badge-online">● En ligne</span>
                     <?php else: ?>
-                    <span class="account-badge badge-offline">● Hors ligne</span>
+                    <span class="badge badge-offline">● Hors ligne</span>
                     <?php endif; ?>
                 </div>
-                <div class="section-divider"><div class="section-divider-gem"></div></div>
-                <ul class="info-list">
+
+                <div class="info-sep"></div>
+
+                <ul class="info-list" style="text-align:left;">
                     <li><span class="info-label">Inscription</span><span class="info-value"><?= $account['joindate'] ? date('d/m/Y', strtotime($account['joindate'])) : '—' ?></span></li>
                     <li><span class="info-label">Dernière connexion</span><span class="info-value"><?= $account['last_login'] ? date('d/m/Y H:i', strtotime($account['last_login'])) : '—' ?></span></li>
                     <li><span class="info-label">Dernière IP</span><span class="info-value"><?= htmlspecialchars($account['last_ip'] ?? '—') ?></span></li>
                     <li><span class="info-label">Personnages</span><span class="info-value gold"><?= count($characters) ?></span></li>
                     <?php if ((int)($account['mutetime'] ?? 0) > time()): ?>
-                    <li><span class="info-label">Réduit au silence</span><span class="info-value" style="color:var(--error)">Jusqu'au <?= date('d/m/Y', $account['mutetime']) ?></span></li>
+                    <li><span class="info-label">Muet jusqu'au</span><span class="info-value" style="color:var(--error)"><?= date('d/m/Y', $account['mutetime']) ?></span></li>
                     <?php endif; ?>
                 </ul>
+
+                <a href="logout.php" class="panel-logout">⚔ Déconnexion</a>
             </div>
         </div>
 
-        <!-- Panel Personnages -->
-        <div class="panel arcane-border" style="grid-row: 1 / 3;">
+        <!-- CHARACTERS PANEL -->
+        <div class="panel panel-arcane reveal" style="grid-row: span 2;">
             <div class="panel-header">
                 <span class="panel-icon">🧙</span>
                 <span class="panel-title">Mes <span>Héros</span></span>
@@ -394,35 +469,36 @@ require_once __DIR__ . '/header.php';
             <div class="panel-body">
                 <?php if (empty($characters)): ?>
                 <div class="empty-chars">
-                    <div class="empty-icon">⚔</div>
+                    <span class="empty-chars-icon">⚔</span>
                     <p>Aucun héros créé</p>
-                    <p style="font-family:'Crimson Pro',serif;font-size:.88rem;margin-top:.5rem;font-style:italic;color:var(--silver);">Connectez-vous au jeu pour créer votre premier personnage.</p>
+                    <p style="margin-top:.5rem;font-style:italic;opacity:.7;font-family:'Crimson Pro',serif;font-size:.88rem;">Connectez-vous au jeu pour créer votre premier personnage.</p>
                 </div>
                 <?php else: ?>
-                <div class="chars-grid">
+                <div class="chars-list">
                     <?php foreach ($characters as $char):
                         $classId = (int)$char['class'];
-                        $color   = $classColors[$classId]  ?? '#a8b4d0';
-                        $icon    = $classIcons[$classId]   ?? '⚔';
-                        $class   = $classNames[$classId]   ?? 'Inconnu';
+                        $color   = $classColors[$classId] ?? '#a8b4d0';
+                        $icon    = $classIcons[$classId]  ?? '⚔';
+                        $cls     = $classNames[$classId]  ?? 'Inconnu';
                         $race    = $raceNames[(int)$char['race']] ?? 'Inconnu';
                     ?>
-                    <div class="char-card">
-                        <div class="char-icon" style="background:<?= $color ?>18;border-color:<?= $color ?>40;color:<?= $color ?>"><?= $icon ?></div>
+                    <div class="char-card" style="--class-color:<?= $color ?>">
+                        <div class="char-icon" style="background:<?= $color ?>14;border-color:<?= $color ?>40;color:<?= $color ?>"><?= $icon ?></div>
                         <div class="char-info">
-                            <div class="char-name" style="color:<?= $color ?>"><?= htmlspecialchars($char['name']) ?>
-                                <?php if (!empty($char['online'])): ?><span style="font-size:.6rem;font-family:'Cinzel',serif;letter-spacing:.1em;color:var(--success);margin-left:.4rem;vertical-align:middle;">● EN JEU</span><?php endif; ?>
+                            <div class="char-name" style="color:<?= $color ?>">
+                                <?= htmlspecialchars($char['name']) ?>
+                                <?php if (!empty($char['online'])): ?><span class="char-ingame">● EN JEU</span><?php endif; ?>
                             </div>
                             <div class="char-meta">
                                 <span><?= $race ?></span>
-                                <span style="color:<?= $color ?>"><?= $class ?></span>
+                                <span style="color:<?= $color ?>"><?= $cls ?></span>
                                 <?php if (!empty($char['zone'])): ?><span>· Zone <?= (int)$char['zone'] ?></span><?php endif; ?>
                             </div>
-                            <?php if (!empty($char['money'])): ?><div style="font-size:.75rem;margin-top:.2rem"><?= formatMoney((int)$char['money']) ?></div><?php endif; ?>
+                            <?php if (!empty($char['money'])): ?><div class="char-money"><?= formatMoney((int)$char['money']) ?></div><?php endif; ?>
                         </div>
                         <div class="char-right">
                             <div class="char-level"><?= (int)$char['level'] ?></div>
-                            <div class="char-level-label">Niv.</div>
+                            <div class="char-level-lbl">Niv.</div>
                             <?php if (!empty($char['totaltime'])): ?><div class="char-time"><?= formatTime((int)$char['totaltime']) ?></div><?php endif; ?>
                         </div>
                     </div>
@@ -432,59 +508,63 @@ require_once __DIR__ . '/header.php';
             </div>
         </div>
 
-        <!-- Panel Serveur -->
-        <div class="panel">
+        <!-- SERVER STATUS -->
+        <div class="panel reveal">
             <div class="panel-header">
                 <span class="panel-icon">🌍</span>
                 <span class="panel-title">Statut du <span>Serveur</span></span>
             </div>
             <div class="panel-body">
                 <div class="server-status">
-                    <div class="status-dot <?= $realmOnline ? 'online' : 'offline' ?>"></div>
-                    <span class="status-label <?= $realmOnline ? 'online' : 'offline' ?>"><?= $realmOnline ? 'En ligne' : 'Hors ligne' ?></span>
+                    <div class="status-indicator <?= $realmOnline ? 'online' : 'offline' ?>"></div>
+                    <span class="status-text <?= $realmOnline ? 'online' : 'offline' ?>"><?= $realmOnline ? 'En ligne' : 'Hors ligne' ?></span>
                     <span class="status-realm"><?= htmlspecialchars($realmName) ?></span>
                 </div>
                 <div class="server-stats">
                     <div class="stat-box">
-                        <div class="stat-number"><?= $realmOnline ? $realmPlayers : '—' ?></div>
+                        <div class="stat-num"><?= $realmOnline ? $realmPlayers : '—' ?></div>
                         <div class="stat-desc">Joueurs connectés</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-number">3.3.5</div>
-                        <div class="stat-desc">Version du client</div>
+                        <div class="stat-num">3.3.5</div>
+                        <div class="stat-desc">Version client</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Panel Gestion -->
-        <div class="panel col-span-full">
+        <!-- ACCOUNT MANAGEMENT -->
+        <div class="panel col-span-full reveal">
             <div class="panel-header">
                 <span class="panel-icon">🔮</span>
                 <span class="panel-title">Gestion du <span>Compte</span></span>
             </div>
             <div class="panel-body">
-                <div class="tabs">
-                    <button class="tab-btn active" onclick="switchTab('password', this)">🔑 Mot de passe</button>
-                    <button class="tab-btn" onclick="switchTab('email', this)">✉ Adresse e-mail</button>
+                <div class="mgmt-tabs">
+                    <button class="mgmt-tab active" onclick="switchTab('password', this)">🔑 Mot de passe</button>
+                    <button class="mgmt-tab" onclick="switchTab('email', this)">✉ Adresse e-mail</button>
                 </div>
-                <div id="tab-password" class="tab-panel active" style="max-width:460px">
+
+                <!-- Password tab -->
+                <div id="tab-password" class="mgmt-panel active">
                     <form method="POST" action="dashboard.php" autocomplete="off" novalidate>
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                         <input type="hidden" name="action" value="change_password">
-                        <div class="form-group"><label class="form-label" for="current_password">Mot de passe actuel</label><div class="input-wrap"><span class="input-icon">🔒</span><input type="password" id="current_password" name="current_password" placeholder="Votre mot de passe actuel" required></div></div>
-                        <div class="form-group"><label class="form-label" for="new_password">Nouveau mot de passe</label><div class="input-wrap"><span class="input-icon">🔮</span><input type="password" id="new_password" name="new_password" placeholder="Minimum 6 caractères" minlength="6" required></div></div>
-                        <div class="form-group"><label class="form-label" for="confirm_password">Confirmer le mot de passe</label><div class="input-wrap"><span class="input-icon">🔮</span><input type="password" id="confirm_password" name="confirm_password" placeholder="Répétez le nouveau mot de passe" required></div></div>
+                        <div class="form-group"><label class="form-label">Mot de passe actuel</label><div class="input-wrap"><span class="input-icon">🔒</span><input type="password" name="current_password" placeholder="Votre mot de passe actuel" required></div></div>
+                        <div class="form-group"><label class="form-label">Nouveau mot de passe</label><div class="input-wrap"><span class="input-icon">🔮</span><input type="password" name="new_password" placeholder="Minimum 6 caractères" minlength="6" required></div></div>
+                        <div class="form-group"><label class="form-label">Confirmer le mot de passe</label><div class="input-wrap"><span class="input-icon">🔮</span><input type="password" name="confirm_password" placeholder="Répétez le nouveau mot de passe" required></div></div>
                         <button type="submit" class="btn-primary">⚔ &nbsp; Changer le mot de passe</button>
                     </form>
                 </div>
-                <div id="tab-email" class="tab-panel" style="max-width:460px">
+
+                <!-- Email tab -->
+                <div id="tab-email" class="mgmt-panel">
                     <form method="POST" action="dashboard.php" autocomplete="off" novalidate>
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                         <input type="hidden" name="action" value="change_email">
-                        <div class="form-group"><label class="form-label">Email actuel</label><div style="font-size:.9rem;color:var(--silver);padding:.5rem 0;font-style:italic;"><?= htmlspecialchars($account['email'] ?? '—') ?></div></div>
-                        <div class="form-group"><label class="form-label" for="new_email">Nouvel e-mail</label><div class="input-wrap"><span class="input-icon">✉</span><input type="email" id="new_email" name="new_email" placeholder="nouveau@email.com" required></div></div>
-                        <div class="form-group"><label class="form-label" for="email_password">Confirmez votre mot de passe</label><div class="input-wrap"><span class="input-icon">🔒</span><input type="password" id="email_password" name="email_password" placeholder="Votre mot de passe actuel" required></div></div>
+                        <div class="form-group"><label class="form-label">Email actuel</label><p style="font-size:.88rem;color:var(--silver);font-style:italic;padding:.3rem 0;"><?= htmlspecialchars($account['email'] ?? '—') ?></p></div>
+                        <div class="form-group"><label class="form-label">Nouvel e-mail</label><div class="input-wrap"><span class="input-icon">✉</span><input type="email" name="new_email" placeholder="nouveau@email.com" required></div></div>
+                        <div class="form-group"><label class="form-label">Confirmez votre mot de passe</label><div class="input-wrap"><span class="input-icon">🔒</span><input type="password" name="email_password" placeholder="Votre mot de passe actuel" required></div></div>
                         <button type="submit" class="btn-arcane-form">✦ &nbsp; Mettre à jour l'e-mail</button>
                     </form>
                 </div>
@@ -493,10 +573,11 @@ require_once __DIR__ . '/header.php';
 
     </div>
 </main>
+
 <script>
 function switchTab(name, btn) {
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.mgmt-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.mgmt-tab').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
     btn.classList.add('active');
 }
