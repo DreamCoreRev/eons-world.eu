@@ -28,10 +28,45 @@
 //    define('SOAP_SENDER',   'Boutique');   // expéditeur du mail in-game
 //
 //  ── SQL REQUIS ────────────────────────────────────────────────
+//  -- Colonne DP (si absente) :
 //  ALTER TABLE `account`
 //    ADD COLUMN `dp` INT UNSIGNED NOT NULL DEFAULT 0;
 //
+//  -- Colonne VP (à ajouter à côté de dp) :
+//  ALTER TABLE `account`
+//    ADD COLUMN `vp` INT UNSIGNED NOT NULL DEFAULT 0
+//    AFTER `dp`;
+//
 //  CREATE TABLE IF NOT EXISTS `dp_shop_log` (
+//    `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+//    `account_id`  INT UNSIGNED NOT NULL,
+//    `char_name`   VARCHAR(64)  NOT NULL DEFAULT '',
+//    `item_id`     VARCHAR(64)  NOT NULL,
+//    `item_name`   VARCHAR(128) NOT NULL,
+//    `game_item_id`INT UNSIGNED NOT NULL DEFAULT 0,
+//    `cost`        INT UNSIGNED NOT NULL,
+//    `currency`    ENUM('dp','vp') NOT NULL DEFAULT 'dp',
+//    `soap_status` ENUM('ok','failed','service','na') NOT NULL DEFAULT 'ok',
+//    `soap_error`  TEXT         NULL,
+//    `created_at`  DATETIME     NOT NULL DEFAULT NOW()
+//  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+//
+//  CREATE TABLE IF NOT EXISTS `dp_shop_queue` (
+//    `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+//    `account_id`  INT UNSIGNED NOT NULL,
+//    `char_name`   VARCHAR(64)  NOT NULL,
+//    `item_id`     VARCHAR(64)  NOT NULL,
+//    `item_name`   VARCHAR(128) NOT NULL,
+//    `game_item_id`INT UNSIGNED NOT NULL,
+//    `quantity`    SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+//    `currency`    ENUM('dp','vp') NOT NULL DEFAULT 'dp',
+//    `status`      ENUM('pending','delivered','error') NOT NULL DEFAULT 'pending',
+//    `attempts`    TINYINT UNSIGNED NOT NULL DEFAULT 0,
+//    `created_at`  DATETIME     NOT NULL DEFAULT NOW(),
+//    `delivered_at`DATETIME     NULL
+//  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+//
+//  CREATE TABLE IF NOT EXISTS `vp_shop_log` (
 //    `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 //    `account_id`  INT UNSIGNED NOT NULL,
 //    `char_name`   VARCHAR(64)  NOT NULL DEFAULT '',
@@ -44,7 +79,7 @@
 //    `created_at`  DATETIME     NOT NULL DEFAULT NOW()
 //  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 //
-//  CREATE TABLE IF NOT EXISTS `dp_shop_queue` (
+//  CREATE TABLE IF NOT EXISTS `vp_shop_queue` (
 //    `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 //    `account_id`  INT UNSIGNED NOT NULL,
 //    `char_name`   VARCHAR(64)  NOT NULL,
@@ -153,7 +188,8 @@ $accountId  = $isLoggedIn ? (int)$_SESSION['account_id'] : 0;
 //   name         → nom affiché
 //   desc         → description
 //   icon         → emoji
-//   price        → coût en DP
+//   price        → coût en points (DP ou VP selon currency)
+//   currency     → 'dp' (Donor Points) | 'vp' (Vote Points)  — défaut 'dp'
 //   category     → montures | pets | equipement | services
 //   game_item_id → ID Wowhead/TrinityCore de l'item (0 = service sans item)
 //   quantity     → quantité à envoyer (défaut 1)
@@ -162,11 +198,27 @@ $accountId  = $isLoggedIn ? (int)$_SESSION['account_id'] : 0;
 $catalog = [
     // ── MONTURES ─────────────────────────────────────────────
     [
-        'id'           => 'mount_spectral_tiger',
-        'name'         => 'Tigre Spectral',
-        'desc'         => 'Une monture légendaire forgée dans les brumes de l\'éther. Convoquée d\'une autre dimension, cette créature laisse une traînée de lumière arcanique derrière elle.',
+        'id'           => 'ability_mount_spectraltiger',
+        'name'         => 'Rênes de tigre spectral',
+        'desc'         => 'Invoque et renvoie un tigre spectral.',
         'icon'         => '🐯',
         'price'        => 800,
+        'currency'     => 'dp',
+        'category'     => 'montures',
+        'game_item_id' => 33224,   // https://www.wowhead.com/fr/item=33224/renes-de-tigre-spectral
+        'quantity'     => 1,
+        'soap_cmd'     => null,
+        'badge'        => 'Légendaire',
+        'badge_color'  => '#f0c060',
+        'ribbon'       => 'Populaire',
+    ],
+	[
+        'id'           => 'ability_mount_spectraltiger',
+        'name'         => 'Rênes de tigre spectral',
+        'desc'         => 'Invoque et renvoie un tigre spectral.',
+        'icon'         => '🐯',
+        'price'        => 1800,
+        'currency'     => 'vp',
         'category'     => 'montures',
         'game_item_id' => 33224,   // https://www.wowhead.com/fr/item=33224/renes-de-tigre-spectral
         'quantity'     => 1,
@@ -176,11 +228,12 @@ $catalog = [
         'ribbon'       => 'Populaire',
     ],
     [
-        'id'           => 'mount_void_dragon',
-        'name'         => 'Dragon du Néant',
-        'desc'         => 'Né dans le cœur du vide cosmique, ce dragon est la manifestation vivante de la puissance du néant. Sa présence fait trembler les pierres des donjons.',
-        'icon'         => '🐉',
+        'id'           => 'ability_mount_nightmarehorse',
+        'name'         => 'Cheval de guerre noir de croisé',
+        'desc'         => 'Invoque et renvoie un cheval de guerre noir de croisé.',
+        'icon'         => '🐎',
         'price'        => 1200,
+        'currency'     => 'vp',
         'category'     => 'montures',
         'game_item_id' => 49098,   // Remplacer par l'ID item souhaité sur votre serveur
         'quantity'     => 1,
@@ -189,11 +242,12 @@ $catalog = [
         'badge_color'  => '#a070ff',
     ],
     [
-        'id'           => 'mount_frost_wyrm',
-        'name'         => 'Wyrm de Givre',
-        'desc'         => 'Arraché aux glaces éternelles du Norfendre. Ce wyrm crache un souffle glacé qui congèle tout sur son passage.',
-        'icon'         => '❄️',
+        'id'           => 'ability_mount_drake_proto',
+        'name'         => 'Rênes de proto-drake bleu',
+        'desc'         => 'Invoque et renvoie un proto-drake bleu.',
+        'icon'         => '🐉',
         'price'        => 650,
+        'currency'     => 'dp',
         'category'     => 'montures',
         'game_item_id' => 44151,   // Remplacer par l'ID item souhaité sur votre serveur
         'quantity'     => 1,
@@ -209,6 +263,7 @@ $catalog = [
         'desc'         => 'Ce minuscule phénix n\'a pas encore maîtrisé le feu, mais ses plumes illuminent les nuits les plus sombres d\'un éclat doré-orangé envoûtant.',
         'icon'         => '🔥',
         'price'        => 250,
+        'currency'     => 'vp',
         'category'     => 'pets',
         'game_item_id' => 29958,   // Bébé phénix
         'quantity'     => 1,
@@ -223,6 +278,7 @@ $catalog = [
         'desc'         => 'Une conscience ancienne piégée dans une flamme éternelle. Il murmure des secrets oubliés à l\'oreille de son maître.',
         'icon'         => '💫',
         'price'        => 180,
+        'currency'     => 'dp',
         'category'     => 'pets',
         'game_item_id' => 11110,   // Remplacer si besoin
         'quantity'     => 1,
@@ -236,6 +292,7 @@ $catalog = [
         'desc'         => 'Une réplique miniature du destroyer. Il n\'a pas encore tout à fait la puissance de ravager Azeroth, mais il essaie de son mieux.',
         'icon'         => '🦕',
         'price'        => 320,
+        'currency'     => 'dp',
         'category'     => 'pets',
         'game_item_id' => 44820,   // Remplacer par l'ID custom de votre serveur si applicable
         'quantity'     => 1,
@@ -251,6 +308,7 @@ $catalog = [
         'desc'         => 'Une réplique cosmétique de la légendaire hache runique. Ne peut pas être utilisée en combat, mais impressionnera vos compagnons de guilde.',
         'icon'         => '⚔️',
         'price'        => 500,
+        'currency'     => 'dp',
         'category'     => 'equipement',
         'game_item_id' => 49623,   // Ombre-Deuil
         'quantity'     => 1,
@@ -264,6 +322,7 @@ $catalog = [
         'desc'         => 'Forgée dans les entrailles de l\'Ulduar par les Titans eux-mêmes. Un ensemble cosmétique d\'une beauté et d\'une rareté absolues.',
         'icon'         => '🛡️',
         'price'        => 420,
+        'currency'     => 'vp',
         'category'     => 'equipement',
         'game_item_id' => 45535,   // Remplacer par l'ID voulu
         'quantity'     => 1,
@@ -278,6 +337,7 @@ $catalog = [
         'desc'         => 'Ce bâton a traversé des millénaires. Les runes gravées dans son bois pulsent d\'une énergie magique que peu osent toucher.',
         'icon'         => '🪄',
         'price'        => 380,
+        'currency'     => 'dp',
         'category'     => 'equipement',
         'game_item_id' => 45085,   // Remplacer par l'ID voulu
         'quantity'     => 1,
@@ -294,6 +354,7 @@ $catalog = [
         'desc'         => 'Offrez une nouvelle identité à votre héros. Le changement prend effet lors de la prochaine connexion au jeu.',
         'icon'         => '✒️',
         'price'        => 150,
+        'currency'     => 'vp',
         'category'     => 'services',
         'game_item_id' => 0,
         'quantity'     => 1,
@@ -307,10 +368,25 @@ $catalog = [
         'desc'         => 'Réincarnez votre personnage dans une autre race. Votre histoire, vos équipements et votre niveau sont préservés.',
         'icon'         => '🧬',
         'price'        => 250,
+        'currency'     => 'dp',
         'category'     => 'services',
         'game_item_id' => 0,
         'quantity'     => 1,
         'soap_cmd'     => '.character changerace %char%',
+        'badge'        => 'Service',
+        'badge_color'  => '#8890ff',
+    ],
+	[
+        'id'           => 'service_faction_change',
+        'name'         => 'Changement de Faction',
+        'desc'         => 'Changer votre Faction.',
+        'icon'         => '🧬',
+        'price'        => 250,
+        'currency'     => 'dp',
+        'category'     => 'services',
+        'game_item_id' => 0,
+        'quantity'     => 1,
+        'soap_cmd'     => '.character changefaction %char%',
         'badge'        => 'Service',
         'badge_color'  => '#8890ff',
     ],
@@ -320,6 +396,7 @@ $catalog = [
         'desc'         => 'Votre héros atteint instantanément le niveau maximum. Équipement de départ Naxxramas fourni. Prêt pour les raids.',
         'icon'         => '⚡',
         'price'        => 1000,
+        'currency'     => 'dp',
         'category'     => 'services',
         'game_item_id' => 0,
         'quantity'     => 1,
@@ -340,6 +417,7 @@ $categories = [
 
 // ── Solde de points & personnages ─────────────────────────────
 $playerDp    = 0;
+$playerVp    = 0;
 $playerChars = [];
 $flashMsg    = '';
 $flashType   = 'info';
@@ -348,12 +426,13 @@ $errors      = [];
 if ($isLoggedIn) {
     try {
         $db   = getAuthDB();
-        $stmt = $db->prepare("SELECT dp FROM account WHERE id = :id LIMIT 1");
+        $stmt = $db->prepare("SELECT dp, vp FROM account WHERE id = :id LIMIT 1");
         $stmt->execute([':id' => $accountId]);
         $row      = $stmt->fetch();
         $playerDp = $row ? (int)($row['dp'] ?? 0) : 0;
+        $playerVp = $row ? (int)($row['vp'] ?? 0) : 0;
     } catch (PDOException $e) {
-        error_log('[Boutique] Lecture dp: ' . $e->getMessage());
+        error_log('[Boutique] Lecture dp/vp: ' . $e->getMessage());
     }
 
     try {
@@ -380,18 +459,23 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST'
         foreach ($catalog as $c) { if ($c['id'] === $itemId) { $item = $c; break; } }
 
         // ── 2. Validations ────────────────────────────────────
+        $itemCurrency  = strtolower($item['currency'] ?? 'dp');
+        $currencyLabel = ($itemCurrency === 'vp') ? 'VP' : 'DP';
+        $playerBalance = ($itemCurrency === 'vp') ? $playerVp : $playerDp;
+
         if (!$item) {
             $errors[] = 'Article introuvable.';
         } elseif (empty($charName)) {
             $errors[] = 'Veuillez sélectionner un personnage destinataire.';
-        } elseif ($playerDp < $item['price']) {
-            $errors[] = 'Points insuffisants. Il vous manque ' . ($item['price'] - $playerDp) . ' DP.';
+        } elseif ($playerBalance < $item['price']) {
+            $errors[] = 'Points insuffisants. Il vous manque ' . ($item['price'] - $playerBalance) . ' ' . $currencyLabel . '.';
         } else {
             // ── 3. Déduction atomique du solde ────────────────
             try {
                 $db  = getAuthDB();
+                $col = ($itemCurrency === 'vp') ? 'vp' : 'dp';
                 $upd = $db->prepare(
-                    "UPDATE account SET dp = dp - :cost WHERE id = :id AND dp >= :cost2"
+                    "UPDATE account SET {$col} = {$col} - :cost WHERE id = :id AND {$col} >= :cost2"
                 );
                 $upd->execute([
                     ':cost'  => $item['price'],
@@ -402,7 +486,8 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST'
                 if ($upd->rowCount() !== 1) {
                     $errors[] = 'Transaction échouée : solde insuffisant ou conflit. Réessayez.';
                 } else {
-                    $playerDp -= $item['price'];
+                    if ($itemCurrency === 'vp') { $playerVp -= $item['price']; }
+                    else                        { $playerDp -= $item['price']; }
 
                     // ── 4. Envoi SOAP ─────────────────────────
                     $soapStatus = 'ok';
@@ -431,8 +516,8 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST'
                                    . '</strong> a été envoyé à <strong>' . htmlspecialchars($charName)
                                    . '</strong>.'
                                    . ($isService
-                                      ? ' Le service prendra effet à la prochaine connexion.'
-                                      : ' Vérifiez votre boîte mail in-game.');
+                                      ? ' Le service peut prendre effet à la prochaine connexion du personnage.'
+                                      : ' Vérifiez votre boîte mail en jeu.');
                         $flashType = 'success';
 
                     } catch (\SoapFault $e) {
@@ -445,8 +530,8 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST'
                         try {
                             $q = $db->prepare(
                                 "INSERT INTO dp_shop_queue
-                                 (account_id, char_name, item_id, item_name, game_item_id, quantity, status)
-                                 VALUES (:aid, :char, :iid, :iname, :gid, :qty, 'pending')"
+                                 (account_id, char_name, item_id, item_name, game_item_id, quantity, currency, status)
+                                 VALUES (:aid, :char, :iid, :iname, :gid, :qty, :cur, 'pending')"
                             );
                             $q->execute([
                                 ':aid'   => $accountId,
@@ -455,6 +540,7 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST'
                                 ':iname' => $item['name'],
                                 ':gid'   => (int)$item['game_item_id'],
                                 ':qty'   => (int)($item['quantity'] ?? 1),
+                                ':cur'   => $itemCurrency,
                             ]);
                         } catch (PDOException $qe) {
                             error_log('[Boutique] Queue insert: ' . $qe->getMessage());
@@ -474,8 +560,8 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST'
                         try {
                             $q = $db->prepare(
                                 "INSERT INTO dp_shop_queue
-                                 (account_id, char_name, item_id, item_name, game_item_id, quantity, status)
-                                 VALUES (:aid, :char, :iid, :iname, :gid, :qty, 'pending')"
+                                 (account_id, char_name, item_id, item_name, game_item_id, quantity, currency, status)
+                                 VALUES (:aid, :char, :iid, :iname, :gid, :qty, :cur, 'pending')"
                             );
                             $q->execute([
                                 ':aid'   => $accountId,
@@ -484,6 +570,7 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST'
                                 ':iname' => $item['name'],
                                 ':gid'   => (int)$item['game_item_id'],
                                 ':qty'   => (int)($item['quantity'] ?? 1),
+                                ':cur'   => $itemCurrency,
                             ]);
                         } catch (PDOException $qe) {
                             error_log('[Boutique] Queue insert (exc): ' . $qe->getMessage());
@@ -497,8 +584,8 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST'
                     try {
                         $log = $db->prepare(
                             "INSERT INTO dp_shop_log
-                             (account_id, char_name, item_id, item_name, game_item_id, cost, soap_status, soap_error)
-                             VALUES (:aid, :char, :iid, :iname, :gid, :cost, :status, :err)"
+                             (account_id, char_name, item_id, item_name, game_item_id, cost, currency, soap_status, soap_error)
+                             VALUES (:aid, :char, :iid, :iname, :gid, :cost, :cur, :status, :err)"
                         );
                         $log->execute([
                             ':aid'    => $accountId,
@@ -507,6 +594,7 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST'
                             ':iname'  => $item['name'],
                             ':gid'    => (int)$item['game_item_id'],
                             ':cost'   => $item['price'],
+                            ':cur'    => $itemCurrency,
                             ':status' => $soapStatus,
                             ':err'    => $soapError,
                         ]);
@@ -631,6 +719,17 @@ require_once __DIR__ . '/header.php';
     backdrop-filter: blur(10px);
 }
 
+.vp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.7rem 1.6rem;
+    background: rgba(9,12,34,0.85);
+    border: 1px solid rgba(100,200,120,0.35);
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+    backdrop-filter: blur(10px);
+}
+
 .dp-badge-icon {
     font-size: 1.2rem;
 }
@@ -651,12 +750,53 @@ require_once __DIR__ . '/header.php';
     text-shadow: 0 0 20px rgba(240,192,96,0.5);
 }
 
+.vp-badge-amount {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #6edf8a;
+    text-shadow: 0 0 20px rgba(100,200,120,0.5);
+}
+
 .dp-badge-unit {
     font-family: 'Cinzel', serif;
     font-size: 0.62rem;
     letter-spacing: 0.15em;
     color: var(--gold);
     opacity: 0.8;
+}
+
+.vp-badge-unit {
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    color: #6edf8a;
+    opacity: 0.8;
+}
+
+/* ─── BOUTON WOWHEAD ───────────────────────────────────────────── */
+.btn-wowhead {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.9rem;
+    background: transparent;
+    color: #7ec8e3;
+    border: 1px solid rgba(126,200,227,0.35);
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+    text-decoration: none;
+    transition: all 0.25s;
+    white-space: nowrap;
+}
+.btn-wowhead:hover {
+    color: #b0dff0;
+    border-color: rgba(126,200,227,0.7);
+    box-shadow: 0 0 14px rgba(126,200,227,0.2);
 }
 
 .dp-recharge-link {
@@ -1265,8 +1405,15 @@ require_once __DIR__ . '/header.php';
         <div class="dp-badge">
             <span class="dp-badge-icon">💎</span>
             <div>
-                <div class="dp-badge-label">Votre solde</div>
+                <div class="dp-badge-label">Donor Points</div>
                 <div class="dp-badge-amount"><?= number_format($playerDp, 0, ',', ' ') ?> <span class="dp-badge-unit">DP</span></div>
+            </div>
+        </div>
+        <div class="vp-badge">
+            <span class="dp-badge-icon">🗳️</span>
+            <div>
+                <div class="dp-badge-label">Vote Points</div>
+                <div class="vp-badge-amount"><?= number_format($playerVp, 0, ',', ' ') ?> <span class="vp-badge-unit">VP</span></div>
             </div>
         </div>
         <a href="#recharge" class="dp-recharge-link">+ Recharger des points</a>
@@ -1300,8 +1447,13 @@ require_once __DIR__ . '/header.php';
 
     <div class="shop-grid" id="shop-grid">
         <?php foreach ($catalog as $item):
-            $canAfford   = $isLoggedIn && $playerDp >= $item['price'];
-            $insufficient = $isLoggedIn && $playerDp < $item['price'];
+            $itemCur     = strtolower($item['currency'] ?? 'dp');
+            $balance     = ($itemCur === 'vp') ? $playerVp : $playerDp;
+            $curLabel    = ($itemCur === 'vp') ? 'VP' : 'DP';
+            $insufficient = $isLoggedIn && $balance < $item['price'];
+            $wowheadUrl  = ($item['game_item_id'] > 0)
+                           ? 'https://www.wowhead.com/wotlk/fr/item=' . (int)$item['game_item_id']
+                           : null;
         ?>
         <div class="item-card reveal" data-category="<?= htmlspecialchars($item['category']) ?>">
 
@@ -1328,22 +1480,30 @@ require_once __DIR__ . '/header.php';
                     <span class="item-price-amount <?= $insufficient ? 'item-price-insufficient' : '' ?>">
                         <?= number_format($item['price'], 0, ',', ' ') ?>
                     </span>
-                    <span class="item-price-unit">DP</span>
+                    <span class="item-price-unit" style="<?= $itemCur === 'vp' ? 'color:#6edf8a;' : '' ?>"><?= $curLabel ?></span>
                 </div>
 
-                <?php if ($isLoggedIn): ?>
-                    <button class="btn-buy <?= $insufficient ? 'disabled' : '' ?>"
-                            <?= $insufficient ? 'disabled' : '' ?>
-                            onclick="openModal(
-                                '<?= htmlspecialchars(addslashes($item['id'])) ?>',
-                                '<?= htmlspecialchars(addslashes($item['name'])) ?>',
-                                <?= (int)$item['price'] ?>
-                            )">
-                        ✦ Acheter
-                    </button>
-                <?php else: ?>
-                    <a href="auth.php" class="btn-login-to-buy">🔒 Connexion</a>
-                <?php endif; ?>
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                    <?php if ($wowheadUrl): ?>
+                    <a href="<?= htmlspecialchars($wowheadUrl) ?>" target="_blank" rel="noopener" class="btn-wowhead"
+                       title="Voir sur Wowhead">🔍 Wowhead</a>
+                    <?php endif; ?>
+
+                    <?php if ($isLoggedIn): ?>
+                        <button class="btn-buy <?= $insufficient ? 'disabled' : '' ?>"
+                                <?= $insufficient ? 'disabled' : '' ?>
+                                onclick="openModal(
+                                    '<?= htmlspecialchars(addslashes($item['id'])) ?>',
+                                    '<?= htmlspecialchars(addslashes($item['name'])) ?>',
+                                    <?= (int)$item['price'] ?>,
+                                    '<?= $curLabel ?>'
+                                )">
+                            ✦ Acheter
+                        </button>
+                    <?php else: ?>
+                        <a href="auth.php" class="btn-login-to-buy">🔒 Connexion</a>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
         <?php endforeach; ?>
@@ -1391,10 +1551,10 @@ require_once __DIR__ . '/header.php';
 
         <div class="modal-cost-row">
             <span class="modal-cost-label">Coût</span>
-            <span class="modal-cost-value" id="modal-item-cost">— DP</span>
+            <span class="modal-cost-value" id="modal-item-cost">—</span>
         </div>
         <div class="modal-balance">
-            Solde après achat : <span id="modal-balance-after">—</span> DP
+            Solde après achat : <span id="modal-balance-after">—</span>
         </div>
 
         <form method="POST" action="boutique.php" id="buy-form">
@@ -1458,15 +1618,17 @@ function filterShop(cat, btn) {
 
 // ─── MODAL ───────────────────────────────────────────────────────
 const playerDp = <?= $isLoggedIn ? (int)$playerDp : 0 ?>;
+const playerVp = <?= $isLoggedIn ? (int)$playerVp : 0 ?>;
 
-function openModal(itemId, itemName, itemCost) {
+function openModal(itemId, itemName, itemCost, currency) {
     document.getElementById('modal-item-id').value   = itemId;
     document.getElementById('modal-item-name').textContent = itemName;
-    document.getElementById('modal-item-cost').textContent = itemCost.toLocaleString('fr-FR') + ' DP';
-    const after = playerDp - itemCost;
+    document.getElementById('modal-item-cost').textContent = itemCost.toLocaleString('fr-FR') + ' ' + currency;
+    const balance = (currency === 'VP') ? playerVp : playerDp;
+    const after   = balance - itemCost;
     const afterEl = document.getElementById('modal-balance-after');
-    afterEl.textContent = after.toLocaleString('fr-FR');
-    afterEl.style.color = after >= 0 ? 'var(--gold-bright)' : 'var(--error)';
+    afterEl.textContent = after.toLocaleString('fr-FR') + ' ' + currency;
+    afterEl.style.color = after >= 0 ? (currency === 'VP' ? '#6edf8a' : 'var(--gold-bright)') : 'var(--error)';
     document.getElementById('buy-modal').classList.add('open');
     document.body.style.overflow = 'hidden';
 }

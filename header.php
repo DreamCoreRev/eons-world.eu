@@ -639,6 +639,7 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
         <li><a href="royaumes.php">Royaumes</a></li>
         <li><a href="classements.php">Classements</a></li>
         <li><a href="boutique.php">Boutique</a></li>
+		<li><a href="vote.php">Vote</a></li>
         <li><a href="#">Guides</a></li>
         <li><a href="#">Communauté</a></li>
     </ul>

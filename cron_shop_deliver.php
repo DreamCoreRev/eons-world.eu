@@ -2,7 +2,7 @@
 <?php
 // ============================================================
 //  cron_shop_deliver.php — Eons CMS
-//  Livraison des items en file d'attente (dp_shop_queue)
+//  Livraison des items en file d'attente (dp_shop_queue + vp_shop_queue)
 //
 //  Ce script est destiné à être exécuté automatiquement
 //  toutes les 5 minutes via une tâche cron ou manuellement.
@@ -39,8 +39,8 @@ require_once $dir . '/config.php';
 // ── Constantes SOAP (doivent être dans config.php) ───────────
 if (!defined('SOAP_HOST'))   define('SOAP_HOST',   '127.0.0.1');
 if (!defined('SOAP_PORT'))   define('SOAP_PORT',   7878);
-if (!defined('SOAP_USER'))   define('SOAP_USER',   'soap_admin');
-if (!defined('SOAP_PASS'))   define('SOAP_PASS',   'changeme');
+if (!defined('SOAP_USER'))   define('SOAP_USER',   'Eonswsoap');
+if (!defined('SOAP_PASS'))   define('SOAP_PASS',   'Eonsworldsoap');
 if (!defined('SOAP_SENDER')) define('SOAP_SENDER', 'Boutique');
 
 // ── Inclure TCSoap ────────────────────────────────────────────
@@ -85,16 +85,17 @@ class TCSoap
     }
 }
 
-// ── Traitement de la file ─────────────────────────────────────
+// ── Traitement d'une file (dp ou vp) ─────────────────────────
 $log  = fn(string $msg) => print('[' . date('Y-m-d H:i:s') . '] ' . $msg . PHP_EOL);
 $maxAttempts = 5;
 
-try {
-    $db = getAuthDB();
-
-    // Récupérer les entrées en attente (max 20 par run)
+/**
+ * Traite une file d'attente (dp_shop_queue ou vp_shop_queue).
+ */
+function processQueue(PDO $db, TCSoap $soap, string $table, string $logTable, string $label, callable $log, int $maxAttempts): void
+{
     $stmt = $db->prepare(
-        "SELECT * FROM dp_shop_queue
+        "SELECT * FROM `{$table}`
          WHERE status = 'pending' AND attempts < :max
          ORDER BY created_at ASC
          LIMIT 20"
@@ -103,11 +104,56 @@ try {
     $pending = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (empty($pending)) {
-        $log('Aucun item en attente.');
-        exit(0);
+        $log("[{$label}] Aucun item en attente.");
+        return;
     }
 
-    $log(count($pending) . ' item(s) en attente de livraison.');
+    $log("[{$label}] " . count($pending) . ' item(s) en attente de livraison.');
+
+    foreach ($pending as $row) {
+        $id       = (int)$row['id'];
+        $char     = $row['char_name'];
+        $itemName = $row['item_name'];
+        $gameId   = (int)$row['game_item_id'];
+        $qty      = (int)$row['quantity'];
+
+        $log("[{$label}] Livraison #$id → $char : $itemName (gameId=$gameId x$qty)");
+
+        // Incrémenter les tentatives
+        $db->prepare("UPDATE `{$table}` SET attempts = attempts + 1 WHERE id = :id")
+           ->execute([':id' => $id]);
+
+        try {
+            $soap->sendItem($char, $gameId, $qty, $itemName);
+
+            // Marquer comme livré
+            $db->prepare(
+                "UPDATE `{$table}`
+                 SET status = 'delivered', delivered_at = NOW()
+                 WHERE id = :id"
+            )->execute([':id' => $id]);
+
+            // Mettre à jour le log principal si possible
+            $db->prepare(
+                "UPDATE `{$logTable}` SET soap_status = 'ok', soap_error = NULL
+                 WHERE account_id = :aid AND item_id = :iid AND soap_status = 'failed'
+                 ORDER BY created_at DESC LIMIT 1"
+            )->execute([':aid' => $row['account_id'], ':iid' => $row['item_id']]);
+
+            $log("[{$label}]   ✓ Livré avec succès.");
+
+        } catch (\SoapFault $e) {
+            $db->prepare(
+                "UPDATE `{$table}` SET status = IF(attempts >= :max, 'error', 'pending') WHERE id = :id"
+            )->execute([':max' => $maxAttempts, ':id' => $id]);
+
+            $log("[{$label}]   ✗ Échec SOAP : " . $e->getMessage());
+        }
+    }
+}
+
+try {
+    $db = getAuthDB();
 
     $soap = null;
     try {
@@ -118,46 +164,11 @@ try {
         exit(1);
     }
 
-    foreach ($pending as $row) {
-        $id       = (int)$row['id'];
-        $char     = $row['char_name'];
-        $itemName = $row['item_name'];
-        $gameId   = (int)$row['game_item_id'];
-        $qty      = (int)$row['quantity'];
+    // ── File DP ───────────────────────────────────────────────
+    processQueue($db, $soap, 'dp_shop_queue', 'dp_shop_log', 'DP', $log, $maxAttempts);
 
-        $log("Livraison #$id → $char : $itemName (gameId=$gameId x$qty)");
-
-        // Incrémenter les tentatives
-        $db->prepare("UPDATE dp_shop_queue SET attempts = attempts + 1 WHERE id = :id")
-           ->execute([':id' => $id]);
-
-        try {
-            $soap->sendItem($char, $gameId, $qty, $itemName);
-
-            // Marquer comme livré
-            $db->prepare(
-                "UPDATE dp_shop_queue
-                 SET status = 'delivered', delivered_at = NOW()
-                 WHERE id = :id"
-            )->execute([':id' => $id]);
-
-            // Mettre à jour le log principal si possible
-            $db->prepare(
-                "UPDATE dp_shop_log SET soap_status = 'ok', soap_error = NULL
-                 WHERE account_id = :aid AND item_id = :iid AND soap_status = 'failed'
-                 ORDER BY created_at DESC LIMIT 1"
-            )->execute([':aid' => $row['account_id'], ':iid' => $row['item_id']]);
-
-            $log("  ✓ Livré avec succès.");
-
-        } catch (\SoapFault $e) {
-            $db->prepare(
-                "UPDATE dp_shop_queue SET status = IF(attempts >= :max, 'error', 'pending') WHERE id = :id"
-            )->execute([':max' => $maxAttempts, ':id' => $id]);
-
-            $log("  ✗ Échec SOAP : " . $e->getMessage());
-        }
-    }
+    // ── File VP ───────────────────────────────────────────────
+    processQueue($db, $soap, 'vp_shop_queue', 'vp_shop_log', 'VP', $log, $maxAttempts);
 
 } catch (\PDOException $e) {
     $log('Erreur DB : ' . $e->getMessage());
