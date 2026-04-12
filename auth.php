@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'registe
     }
     if (!$regErrors) {
         try {
-            $db=$getAuthDB(); $saltBytes=SRP6::generateSalt(); $srp=SRP6::calcVerifier($username,$password,$saltBytes);
+            $db=getAuthDB(); $saltBytes=SRP6::generateSalt(); $srp=SRP6::calcVerifier($username,$password,$saltBytes);
             $stmt=$db->prepare("INSERT INTO account (username,salt,verifier,email,reg_mail,joindate,last_ip,last_attempt_ip,failed_logins,locked,lock_country,online,expansion,mutetime,mutereason,muteby,locale,os,recruiter,timezone_offset) VALUES (UPPER(:username),:salt,:verifier,:email,:reg_mail,NOW(),'127.0.0.1','127.0.0.1',0,0,'00',0,2,0,'','',0,'',0,0)");
             $stmt->execute([':username'=>strtoupper($username),':salt'=>$srp['salt'],':verifier'=>$srp['verifier'],':email'=>strtolower($email),':reg_mail'=>strtolower($email)]);
             $regSuccess=true; $_SESSION['csrf_token']=bin2hex(random_bytes(32)); $csrfToken=$_SESSION['csrf_token'];
