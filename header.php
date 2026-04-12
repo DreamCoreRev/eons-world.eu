@@ -637,12 +637,12 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
 
     <ul class="nav-links">
 		<li><a href="client.php">Jeu</a></li>
+		<li><a href="actualites.php">Actualités</a></li>
         <li><a href="royaumes.php">Royaumes</a></li>
         <li><a href="classements.php">Classements</a></li>
         <li><a href="boutique.php">Boutique</a></li>
 		<li><a href="don.php">Don</a></li>
 		<li><a href="vote.php">Vote</a></li>
-        <li><a href="#">Communauté</a></li>
     </ul>
 
     <div class="nav-actions">
@@ -663,12 +663,12 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
 <div class="nav-mobile" id="navMobile" role="navigation" aria-label="Menu mobile">
     <ul class="nav-mobile-links">
         <li><a href="client.php">Jeu</a></li>
+		<li><a href="actualites.php">Actualités</a></li>
         <li><a href="royaumes.php">Royaumes</a></li>
         <li><a href="classements.php">Classements</a></li>
         <li><a href="boutique.php">Boutique</a></li>
 		<li><a href="don.php">Don</a></li>
 		<li><a href="vote.php">Vote</a></li>
-        <li><a href="#">Communauté</a></li>
     </ul>
     <div class="nav-mobile-account">
         <?php if ($isLoggedIn): ?>

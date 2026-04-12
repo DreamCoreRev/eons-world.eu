@@ -641,7 +641,7 @@ require_once __DIR__ . '/header.php';
     <div class="vote-hero reveal">
         <p class="vote-eyebrow">✦ Soutenez le serveur ✦</p>
         <h1 class="vote-title">Votez & Réclamez des <span>VP</span></h1>
-        <p class="vote-subtitle">Chaque vote soutient la communauté WiiEons et vous récompense en Vote Points, échangeables à la boutique.</p>
+        <p class="vote-subtitle">Chaque vote soutient la communauté Eons et vous récompense en Vote Points, échangeables à la boutique.</p>
         <div class="vote-divider"><div class="vote-divider-gem"></div></div>
     </div>
 
