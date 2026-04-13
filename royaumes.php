@@ -30,6 +30,30 @@ try {
          WHERE online = 1 AND map IN (0, 1)
          LIMIT 100"
     )->fetchAll(PDO::FETCH_ASSOC);
+
+    // Joueurs en ligne pour la liste (toutes maps, avec zone)
+    $onlineCharsList = $chars->query(
+        "SELECT name, race, class, level, zone
+         FROM characters
+         WHERE online = 1
+         ORDER BY level DESC
+         LIMIT 50"
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    // Noms des zones
+    $zoneNames = [];
+    if (!empty($onlineCharsList)) {
+        $zoneIds = array_unique(array_filter(array_column($onlineCharsList, 'zone')));
+        if ($zoneIds) {
+            $auth2 = getAuthDB();
+            $placeholders = implode(',', array_fill(0, count($zoneIds), '?'));
+            $zStmt = $auth2->prepare("SELECT id, zone_name FROM zones WHERE id IN ($placeholders)");
+            $zStmt->execute($zoneIds);
+            foreach ($zStmt->fetchAll(PDO::FETCH_ASSOC) as $z) {
+                $zoneNames[$z['id']] = $z['zone_name'];
+            }
+        }
+    }
 } catch (PDOException $e) {
     error_log('[Royaumes] Chars DB: ' . $e->getMessage());
 }
@@ -623,6 +647,138 @@ require_once __DIR__ . '/header.php';
     .rates-grid { grid-template-columns: repeat(3, 1fr); }
     .mini-stats-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ─── SECTION JOUEURS EN LIGNE ────────────────────────────── */
+.online-players-section {
+    max-width: 1200px;
+    margin: 2.5rem auto 0;
+    animation: fadeUp 0.8s 0.4s both;
+}
+.online-players-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid rgba(136,144,255,0.12);
+}
+.online-players-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.online-players-title::before {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(95,255,176,0.9);
+    animation: ledBlink 1.8s ease-in-out infinite;
+}
+.online-players-count {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--silver);
+    background: rgba(136,144,255,0.08);
+    border: 1px solid rgba(136,144,255,0.15);
+    padding: 0.25rem 0.75rem;
+    border-radius: 2px;
+}
+.online-players-count span { color: var(--arcane-bright); font-weight: 700; }
+.online-table-wrap {
+    background: rgba(6,8,26,0.75);
+    border: 1px solid rgba(136,144,255,0.12);
+    backdrop-filter: blur(16px);
+    overflow: hidden;
+    position: relative;
+}
+.online-table-wrap::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 22px; height: 22px;
+    border-top: 2px solid var(--gold-bright);
+    border-left: 2px solid var(--gold-bright);
+    filter: drop-shadow(0 0 4px rgba(240,192,96,0.5));
+    z-index: 2;
+}
+.online-table-wrap::after {
+    content: '';
+    position: absolute; bottom: 0; right: 0;
+    width: 22px; height: 22px;
+    border-bottom: 2px solid var(--arcane-bright);
+    border-right: 2px solid var(--arcane-bright);
+    filter: drop-shadow(0 0 4px rgba(136,144,255,0.5));
+    z-index: 2;
+}
+.online-table { width: 100%; border-collapse: collapse; }
+.online-table thead tr {
+    background: rgba(15,18,48,0.8);
+    border-bottom: 1px solid rgba(136,144,255,0.15);
+}
+.online-table thead th {
+    font-family: 'Cinzel', serif;
+    font-size: 0.52rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--silver);
+    padding: 0.75rem 1.2rem;
+    text-align: left;
+    white-space: nowrap;
+}
+.online-table tbody tr {
+    border-bottom: 1px solid rgba(136,144,255,0.06);
+    transition: background 0.2s;
+}
+.online-table tbody tr:last-child { border-bottom: none; }
+.online-table tbody tr:hover { background: rgba(136,144,255,0.05); }
+.online-table td { padding: 0.65rem 1.2rem; vertical-align: middle; }
+.ot-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--white);
+}
+.ot-level {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    color: var(--gold-bright);
+    text-shadow: 0 0 8px rgba(240,192,96,0.4);
+    text-align: center;
+}
+.ot-race-icon, .ot-class-icon {
+    width: 26px; height: 26px;
+    border-radius: 3px;
+    border: 1px solid rgba(136,144,255,0.2);
+    image-rendering: pixelated;
+    object-fit: cover;
+}
+.ot-class-cell { display: flex; align-items: center; gap: 0.5rem; }
+.ot-class-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+}
+.ot-zone {
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.9rem;
+    color: var(--silver);
+}
+.online-empty {
+    text-align: center;
+    padding: 2.5rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: rgba(168,180,208,0.35);
+    text-transform: uppercase;
+}
 </style>
 
 <main class="royaumes-page">
@@ -920,6 +1076,98 @@ require_once __DIR__ . '/header.php';
 
         </div><!-- /realm-stats-panel -->
     </div><!-- /royaumes-grid -->
+
+    <!-- ── JOUEURS EN LIGNE ───────────────────────────────────── -->
+    <section class="online-players-section reveal">
+        <div class="online-players-header">
+            <div class="online-players-title">Joueurs en ligne</div>
+            <div class="online-players-count">
+                <span><?= $onlinePlayers ?></span> aventurier<?= $onlinePlayers > 1 ? 's' : '' ?> connecté<?= $onlinePlayers > 1 ? 's' : '' ?>
+            </div>
+        </div>
+
+        <div class="online-table-wrap">
+            <?php if (empty($onlineCharsList)): ?>
+                <div class="online-empty">✦ Aucun aventurier en ligne pour le moment ✦</div>
+            <?php else: ?>
+                <table class="online-table">
+                    <thead>
+                        <tr>
+                            <th>✦ Nom</th>
+                            <th style="text-align:center">Niveau</th>
+                            <th>Race</th>
+                            <th>Classe</th>
+                            <th>Zone</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php
+                    $raceIcons = [
+                        1  => '/assets/images/races/human.png',
+                        2  => '/assets/images/races/orc.png',
+                        3  => '/assets/images/races/dwarf.png',
+                        4  => '/assets/images/races/night_elf.png',
+                        5  => '/assets/images/races/undead.png',
+                        6  => '/assets/images/races/tauren.png',
+                        7  => '/assets/images/races/gnome.png',
+                        8  => '/assets/images/races/troll.png',
+                        10 => '/assets/images/races/blood_elf.png',
+                        11 => '/assets/images/races/draenei.png',
+                    ];
+                    $classIconFiles = [
+                        1  => '/assets/images/class/IconeWarrior.png',
+                        2  => '/assets/images/class/IconePaladin.png',
+                        3  => '/assets/images/class/IconeHunter.png',
+                        4  => '/assets/images/class/IconeRogue.png',
+                        5  => '/assets/images/class/IconePriest.png',
+                        6  => '/assets/images/class/IconeDK.png',
+                        7  => '/assets/images/class/IconeChaman.png',
+                        8  => '/assets/images/class/IconeMage.png',
+                        9  => '/assets/images/class/IconeWarlock.png',
+                        11 => '/assets/images/class/IconeDruid.png',
+                    ];
+                    $classNamesOnline = [
+                        1=>'Guerrier',2=>'Paladin',3=>'Chasseur',4=>'Voleur',5=>'Prêtre',
+                        6=>'Chevalier de la Mort',7=>'Chaman',8=>'Mage',9=>'Démoniste',11=>'Druide'
+                    ];
+                    $classColorsOnline = [
+                        1=>'#C79C6E',2=>'#F58CBA',3=>'#ABD473',4=>'#FFF569',5=>'#FFFFFF',
+                        6=>'#C41F3B',7=>'#0070DE',8=>'#69CCF0',9=>'#9482C9',11=>'#FF7D0A'
+                    ];
+                    foreach ($onlineCharsList as $char):
+                        $classId = (int)$char['class'];
+                        $raceId  = (int)$char['race'];
+                        $color   = $classColorsOnline[$classId] ?? '#8890ff';
+                        $clsName = $classNamesOnline[$classId] ?? 'Inconnu';
+                        $zoneName = $zoneNames[$char['zone']] ?? 'Azeroth';
+                        $raceIcon = $raceIcons[$raceId] ?? '';
+                        $clsIcon  = $classIconFiles[$classId] ?? '';
+                    ?>
+                        <tr>
+                            <td class="ot-name"><?= htmlspecialchars($char['name']) ?></td>
+                            <td class="ot-level"><?= (int)$char['level'] ?></td>
+                            <td>
+                                <?php if ($raceIcon): ?>
+                                    <img src="<?= $raceIcon ?>" class="ot-race-icon" alt="">
+                                <?php else: ?>
+                                    <span style="color:var(--silver);font-size:0.7rem">—</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="display:flex;align-items:center;gap:0.5rem;padding-top:0.8rem">
+                                <?php if ($clsIcon): ?>
+                                    <img src="<?= $clsIcon ?>" class="ot-class-icon" alt="">
+                                <?php endif; ?>
+                                <span class="ot-class-name" style="color:<?= $color ?>"><?= htmlspecialchars($clsName) ?></span>
+                            </td>
+                            <td class="ot-zone"><?= htmlspecialchars($zoneName) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+    </section>
+
 </main>
 
 <!-- FOOTER -->

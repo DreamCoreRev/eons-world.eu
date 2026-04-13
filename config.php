@@ -25,7 +25,7 @@ define('STRIPE_WEBHOOK_SECRET', 'whsec_iRlRbhPQbFCDmrCl05520OOCxLHt2qdu');
 define('DB_CHARS_NAME', 'eons_chars');
 
 // ── Sécurité ─────────────────────────────────────────────────
-define('SITE_URL',  'http://localhost/');
+define('SITE_URL',  'https://eons-world.eu/');
 define('SECRET_KEY', '8e420c7d45f4c08eb45a86c03cc79cd51390622899899fc670d2ba3fb05db5e5');
 
 // ── Création PDO Auth ─────────────────────────────────────────
