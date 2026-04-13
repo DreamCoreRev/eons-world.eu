@@ -94,18 +94,15 @@ require_once __DIR__ . '/header.php';
 <style>
 /* ── Fix débordement horizontal global ───────────────────────── */
 html, body {
-    overflow-x: clip;
-    width: 100%;
-    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 /* ─── HERO ACTUALITÉS ────────────────────────────────────────── */
 .news-hero {
     position: relative;
     z-index: 10;
-    padding: 130px 1rem 50px;
+    padding: 130px 0 0;
     text-align: center;
-    overflow-x: hidden;
 }
 
 .news-hero::before {
@@ -186,23 +183,24 @@ html, body {
     z-index: 10;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 2rem 6rem;
+    padding: 0rem 2rem 6rem;
 }
 
 /* ─── FILTRES ────────────────────────────────────────────────── */
 .news-filters {
+    display: grid;
+    margin: 0 auto 2rem;
+    position: relative;
+    z-index: 1;
+	justify-content: space-around;
+}
+.news-filters-inner {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     justify-content: center;
     align-items: center;
-    position: relative;
-    z-index: 1;
-    padding: 0 2rem;
-    margin: 0 auto;
-    max-width: 800px;
-    width: 100%;
-    box-sizing: border-box;
+	flex-wrap: nowrap;
 }
 
 .filter-btn {
@@ -211,13 +209,12 @@ html, body {
     letter-spacing: 0.15em;
     text-transform: uppercase;
     color: var(--silver);
-    background: rgba(15,18,48,0.7);
+    background: transparent;
     border: 1px solid rgba(136,144,255,0.2);
     border-radius: 3px;
     padding: 0.45rem 1rem;
     text-decoration: none;
     transition: all 0.3s;
-    backdrop-filter: blur(8px);
 }
 
 .filter-btn:hover {
@@ -236,6 +233,7 @@ html, body {
 
 /* ─── NEWS ÉPINGLÉE (hero card) ──────────────────────────────── */
 .pinned-section {
+    margin-top: 1.5rem;
     margin-bottom: 3rem;
 }
 
@@ -662,8 +660,12 @@ $allNewsForModal = array_map(fn($n) => [
     <p>Restez informé des dernières nouvelles, mises à jour et événements du serveur.</p>
     <div class="arcane-divider"></div>
 
-    <!-- Filtres catégories -->
+</section>
+
+<!-- ─── CONTENU ──────────────────────────────────────────────── -->
+<div class="news-wrapper">
     <nav class="news-filters" aria-label="Filtres par catégorie">
+        <div class="news-filters-inner">
         <?php foreach ($categories as $slug => $label): ?>
             <?php
                 $url = $slug === ''
@@ -676,11 +678,8 @@ $allNewsForModal = array_map(fn($n) => [
                 <?= $icon ? $icon . ' ' : '' ?><?= htmlspecialchars($label) ?>
             </a>
         <?php endforeach; ?>
+        </div>
     </nav>
-</section>
-
-<!-- ─── CONTENU ──────────────────────────────────────────────── -->
-<div class="news-wrapper">
 
     <?php if ($error): ?>
         <div class="news-error">⚠ <?= htmlspecialchars($error) ?></div>

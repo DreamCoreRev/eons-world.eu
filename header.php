@@ -101,16 +101,22 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
         /* ─── NAVIGATION ────────────────────────────────────────────── */
         nav {
             position: fixed;
-            top: 0; left: 0; right: 0;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 3rem);
+            max-width: 1280px;
             z-index: 1000;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 2rem;
-            height: 62px;
-            background: linear-gradient(180deg, rgba(2,3,12,0.97) 0%, rgba(2,3,12,0.82) 100%);
-            border-bottom: 1px solid rgba(136,144,255,0.18);
-            backdrop-filter: blur(20px) saturate(1.3);
+            height: 58px;
+            background: rgba(6, 7, 20, 0.82);
+            border: 1px solid rgba(136,144,255,0.18);
+            border-radius: 14px;
+            backdrop-filter: blur(24px) saturate(1.4);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(136,144,255,0.06) inset;
             gap: 1rem;
         }
 
@@ -323,15 +329,17 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
         .nav-mobile {
             display: none;
             position: fixed;
-            top: 62px; left: 0; right: 0;
-            background: rgba(2,3,12,0.97);
-            border-bottom: 1px solid rgba(136,144,255,0.15);
-            backdrop-filter: blur(20px);
+            top: 82px; left: 1.5rem; right: 1.5rem;
+            background: rgba(6,7,20,0.97);
+            border: 1px solid rgba(136,144,255,0.18);
+            border-radius: 12px;
+            backdrop-filter: blur(24px);
             z-index: 999;
             padding: 1.5rem;
             transform: translateY(-8px);
             opacity: 0;
             transition: opacity 0.3s, transform 0.3s;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.6);
         }
         .nav-mobile.is-open { opacity: 1; transform: translateY(0); }
         .nav-mobile-links { list-style: none; display: flex; flex-direction: column; gap: 0; }
@@ -527,8 +535,8 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
             .nav-links { display: none; }
         }
         @media (max-width: 600px) {
-            nav { padding: 0 1rem; height: 56px; }
-            .nav-mobile { top: 56px; }
+            nav { top: 10px; width: calc(100% - 1.5rem); padding: 0 1rem; height: 52px; border-radius: 10px; }
+            .nav-mobile { top: 72px; left: 0.75rem; right: 0.75rem; }
             .nav-actions { display: none; }
             .nav-burger { display: flex; }
         }
