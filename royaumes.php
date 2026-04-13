@@ -16,20 +16,12 @@ $serverOnline = checkServerStatus();
 // ── Joueurs en ligne ─────────────────────────────────────────
 $onlinePlayers = 0;
 $totalAccounts = 0;
-$onlineChars   = [];
 try {
     $chars = new PDO(
         'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_CHARS_NAME . ';charset=utf8mb4',
         DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
     $onlinePlayers = (int)$chars->query("SELECT COUNT(*) FROM characters WHERE online = 1")->fetchColumn();
-    // Positions des joueurs en ligne sur les cartes du monde (map 0 = Royaumes de l'Est, 1 = Kalimdor)
-    $onlineChars = $chars->query(
-        "SELECT name, race, class, level, map, position_x, position_y
-         FROM characters
-         WHERE online = 1 AND map IN (0, 1)
-         LIMIT 100"
-    )->fetchAll(PDO::FETCH_ASSOC);
 
     // Joueurs en ligne pour la liste (toutes maps, avec zone)
     $onlineCharsList = $chars->query(
@@ -143,247 +135,39 @@ require_once __DIR__ . '/header.php';
     max-width: 1200px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 1fr 380px;
+    grid-template-columns: 1fr;
     gap: 2rem;
     align-items: start;
 }
 
-/* ─── CARTE ÉPIQUE ────────────────────────────────────────── */
-.realm-map-wrap {
-    position: relative;
-    animation: fadeUp 0.8s 0.2s both;
-}
-
-.realm-map-card {
-    background: rgba(6,8,26,0.85);
-    border: 1px solid rgba(136,144,255,0.15);
-    backdrop-filter: blur(20px);
-    position: relative;
-    overflow: hidden;
-    padding: 2.5rem;
-}
-
-/* Coins dorés */
-.realm-map-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 28px; height: 28px;
-    border-top: 2px solid var(--gold-bright);
-    border-left: 2px solid var(--gold-bright);
-    filter: drop-shadow(0 0 6px rgba(240,192,96,0.7));
-    z-index: 2;
-}
-.realm-map-card::after {
-    content: '';
-    position: absolute;
-    bottom: 0; right: 0;
-    width: 28px; height: 28px;
-    border-bottom: 2px solid var(--arcane-bright);
-    border-right: 2px solid var(--arcane-bright);
-    filter: drop-shadow(0 0 6px rgba(136,144,255,0.7));
-    z-index: 2;
-}
-
-.realm-map-title {
-    font-family: 'Cinzel', serif;
-    font-size: 0.62rem;
-    letter-spacing: 0.3em;
-    color: var(--gold);
-    text-transform: uppercase;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-}
-.realm-map-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, rgba(240,192,96,0.3), transparent);
-}
-
-/* Carte PNG monde */
-.realm-map-svg-wrap {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 149/100;
-    border: 1px solid rgba(136,144,255,0.15);
-    overflow: hidden;
-    background: #02030c;
-}
-.realm-map-svg-wrap img.world-map-img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
-    filter: brightness(0.85) saturate(0.9);
-}
-
-/* Points lumineux sur la carte */
-.map-point {
-    position: absolute;
-    transform: translate(-50%, -50%);
-}
-.map-point-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--gold-bright);
-    box-shadow: 0 0 12px rgba(240,192,96,0.9), 0 0 24px rgba(240,192,96,0.4);
-    animation: pointPulse 2s ease-in-out infinite;
-    cursor: pointer;
-    position: relative;
-    z-index: 2;
-}
-.map-point-dot.arcane {
-    background: var(--arcane-bright);
-    box-shadow: 0 0 12px rgba(136,144,255,0.9), 0 0 24px rgba(136,144,255,0.4);
-}
-.map-point-ring {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 24px; height: 24px;
-    border: 1px solid rgba(240,192,96,0.5);
-    border-radius: 50%;
-    animation: ringExpand 2s ease-out infinite;
-}
-.map-point-dot.arcane + .map-point-ring {
-    border-color: rgba(136,144,255,0.5);
-}
-@keyframes pointPulse {
-    0%,100% { transform: scale(1); }
-    50%      { transform: scale(1.3); }
-}
-@keyframes ringExpand {
-    0%   { transform: translate(-50%,-50%) scale(1); opacity: 0.8; }
-    100% { transform: translate(-50%,-50%) scale(2.5); opacity: 0; }
-}
-
-.map-point-label {
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-bottom: 8px;
-    font-family: 'Cinzel', serif;
-    font-size: 0.5rem;
-    letter-spacing: 0.15em;
-    color: var(--gold-bright);
-    text-transform: uppercase;
-    white-space: nowrap;
-    text-shadow: 0 0 8px rgba(240,192,96,0.8);
-    pointer-events: none;
-}
-
-/* Overlay vignette carte */
-.map-vignette {
-    position: absolute; inset: 0; pointer-events: none;
-    background:
-        linear-gradient(180deg, rgba(2,3,12,0.35) 0%, transparent 15%, transparent 85%, rgba(2,3,12,0.5) 100%),
-        linear-gradient(90deg,  rgba(2,3,12,0.3)  0%, transparent 10%, transparent 90%, rgba(2,3,12,0.3) 100%);
-    z-index: 2;
-}
-
-/* Canvas joueurs */
-#playerMapCanvas {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 3;
-}
-
-/* Boussole */
-.map-compass {
-    position: absolute; bottom: 1rem; right: 1rem;
-    z-index: 5; opacity: 0.85;
-    filter: drop-shadow(0 0 8px rgba(240,192,96,0.3));
-}
-
-/* Tooltip joueur */
-.map-player-tooltip {
-    position: absolute;
-    background: rgba(6,8,26,0.96);
-    border: 1px solid rgba(136,144,255,0.3);
-    color: var(--white);
-    font-family: 'Cinzel', serif;
-    font-size: 0.58rem;
-    letter-spacing: 0.12em;
-    padding: 0.5rem 0.8rem;
-    pointer-events: none;
-    z-index: 10;
-    display: none;
-    white-space: nowrap;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-}
-.map-player-tooltip .tip-name { color: var(--gold-bright); margin-bottom: 0.2rem; font-size: 0.65rem; }
-.map-player-tooltip .tip-class { opacity: 0.75; }
-
-/* Légende joueurs */
-.map-legend {
-    position: absolute; bottom: 1rem; left: 1rem;
-    z-index: 5;
-    font-family: 'Cinzel', serif; font-size: 0.5rem;
-    letter-spacing: 0.15em; color: var(--silver);
-    background: rgba(6,8,26,0.8);
-    border: 1px solid rgba(136,144,255,0.15);
-    padding: 0.4rem 0.7rem;
-    display: flex; align-items: center; gap: 0.5rem;
-    backdrop-filter: blur(6px);
-}
-.map-legend-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--gold-bright);
-    box-shadow: 0 0 8px rgba(240,192,96,0.8);
-    animation: pointPulse 2s ease-in-out infinite;
-}
-
-/* Légende statut serveur dans la carte */
-
-.map-status-badge {
-    position: absolute;
-    top: 1rem; right: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(6,8,26,0.9);
-    border: 1px solid rgba(136,144,255,0.2);
-    padding: 0.4rem 0.8rem;
-    font-family: 'Cinzel', serif;
-    font-size: 0.55rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--silver);
-    backdrop-filter: blur(8px);
-}
-.status-led {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--success);
-    box-shadow: 0 0 8px rgba(95,255,176,0.9);
-    animation: ledBlink 1.8s ease-in-out infinite;
-}
-.status-led.offline {
-    background: var(--error);
-    box-shadow: 0 0 8px rgba(255,95,95,0.9);
-    animation: none;
-}
 @keyframes ledBlink {
     0%,100% { opacity: 1; }
     50%      { opacity: 0.4; }
 }
 
-/* Infos de connexion sous la carte */
+/* Infos de connexion */
 .realm-connect-info {
-    margin-top: 1.2rem;
-    padding: 1rem 1.4rem;
-    background: rgba(6,8,26,0.6);
-    border: 1px solid rgba(136,144,255,0.1);
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+    padding: 1.2rem 1.8rem;
+    background: rgba(6,8,26,0.85);
+    border: 1px solid rgba(136,144,255,0.15);
+    backdrop-filter: blur(20px);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
     flex-wrap: wrap;
+    animation: fadeUp 0.8s 0.2s both;
+    position: relative;
+}
+.realm-connect-info::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 20px; height: 20px;
+    border-top: 1px solid var(--gold-bright);
+    border-left: 1px solid var(--gold-bright);
 }
 .connect-label {
     font-family: 'Cinzel', serif;
@@ -564,40 +348,6 @@ require_once __DIR__ . '/header.php';
     text-transform: uppercase;
 }
 
-/* CTA rejoindre */
-.realm-cta-card {
-    background: linear-gradient(135deg, rgba(26,29,90,0.6) 0%, rgba(90,48,212,0.15) 100%);
-    border: 1px solid rgba(136,144,255,0.2);
-    padding: 1.8rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-.realm-cta-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse at 50% 0%, rgba(136,144,255,0.08) 0%, transparent 60%);
-    pointer-events: none;
-}
-.realm-cta-title {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 1rem;
-    color: var(--white);
-    margin-bottom: 0.6rem;
-}
-.realm-cta-text {
-    font-size: 0.88rem;
-    color: var(--silver);
-    font-style: italic;
-    margin-bottom: 1.3rem;
-    line-height: 1.6;
-}
-.realm-cta-card .btn {
-    width: 100%;
-    justify-content: center;
-}
-
 /* Taux d'XP badges */
 .rates-grid {
     display: grid;
@@ -640,7 +390,6 @@ require_once __DIR__ . '/header.php';
         display: grid;
         grid-template-columns: 1fr 1fr;
     }
-    .realm-cta-card { grid-column: 1 / -1; }
 }
 @media (max-width: 600px) {
     .realm-stats-panel { grid-template-columns: 1fr; }
@@ -799,165 +548,24 @@ require_once __DIR__ . '/header.php';
         </div>
     </div>
 
-    <div class="royaumes-grid">
-
-        <!-- ── CARTE ──────────────────────────────────────────── -->
-        <div class="realm-map-wrap">
-            <div class="realm-map-card">
-                <div class="realm-map-title">✦ Carte du Royaume</div>
-
-                <div class="realm-map-svg-wrap">
-
-                    <!-- Badge statut -->
-                    <div class="map-status-badge">
-                        <div class="status-led <?= $serverOnline ? '' : 'offline' ?>"></div>
-                        <?= $serverOnline ? 'En ligne' : 'Hors ligne' ?>
-                    </div>
-
-                    <!-- Boussole -->
-                    <div class="map-compass">
-                        <svg width="52" height="52" viewBox="0 0 52 52">
-                            <circle cx="26" cy="26" r="24" fill="rgba(6,8,26,0.85)" stroke="rgba(240,192,96,0.35)" stroke-width="1"/>
-                            <circle cx="26" cy="26" r="18" fill="none" stroke="rgba(136,144,255,0.15)" stroke-width="0.5" stroke-dasharray="3,3"/>
-                            <polygon points="26,8 28.5,22 26,18 23.5,22" fill="rgba(255,100,100,0.85)"/>
-                            <polygon points="26,44 28.5,30 26,34 23.5,30" fill="rgba(180,190,255,0.55)"/>
-                            <polygon points="8,26 22,23.5 18,26 22,28.5" fill="rgba(180,190,255,0.45)"/>
-                            <polygon points="44,26 30,23.5 34,26 30,28.5" fill="rgba(180,190,255,0.45)"/>
-                            <circle cx="26" cy="26" r="3" fill="rgba(240,192,96,0.9)"/>
-                            <text x="26" y="5.5" font-family="serif" font-size="6" fill="rgba(240,192,96,0.8)" text-anchor="middle">N</text>
-                        </svg>
-                    </div>
-
-                    <!-- Image de la carte -->
-                    <img class="world-map-img"
-                         src="https://eons-world.eu/assets/map/world/world.png"
-                         alt="Carte du monde d'Azeroth" />
-
-                    <!-- Overlay sombre sur les bords -->
-                    <div class="map-vignette"></div>
-
-                    <!-- Joueurs en ligne (canvas overlay) -->
-                    <canvas id="playerMapCanvas"></canvas>
-
-                    <!-- Tooltip joueur -->
-                    <div class="map-player-tooltip" id="mapTooltip"></div>
-
-                    <!-- Légende -->
-                    <?php if (!empty($onlineChars)): ?>
-                    <div class="map-legend">
-                        <div class="map-legend-dot"></div>
-                        <?= count($onlineChars) ?> joueur<?= count($onlineChars) > 1 ? 's' : '' ?> en ligne
-                    </div>
-                    <?php endif; ?>
-
-                    <?php
-                    // Coordonnées WoW → pourcentage sur la carte PNG
-                    // Map 0 (Royaumes de l'Est) : x de -17600 à 17600, y de -13500 à 13500
-                    // Map 1 (Kalimdor)            : x de -17600 à 17600, y de -13500 à 13500
-                    // Le PNG world.png est 1090×730 (ratio ~1.49:1)
-                    // Kalimdor occupe la moitié gauche, Royaumes de l'Est la droite
-                    // Northrend est en haut centre (~30% largeur, 0–25% hauteur)
-
-                    // Bornes approx. WoW pour le PNG fourni (calées visuellement)
-                    // Map 0 (EK)      : x [-17000, 17000] → [50%, 100%] de la largeur
-                    //                   y [-13000, 11600] → [0%, 100%] de la hauteur (y inversé)
-                    // Map 1 (Kalimdor): x [-17000, 17000] → [0%, 50%] de la largeur
-                    //                   y [-13000, 11600] → [0%, 100%] de la hauteur
-
-                    $classes = [
-                        1=>'Guerrier',2=>'Paladin',3=>'Chasseur',4=>'Voleur',5=>'Prêtre',
-                        6=>'Chevalier de la mort',7=>'Chaman',8=>'Mage',9=>'Démoniste',
-                        10=>'Moine',11=>'Druide'
-                    ];
-                    $classColors = [
-                        1=>'#C79C6E',2=>'#F58CBA',3=>'#ABD473',4=>'#FFF569',5=>'#FFFFFF',
-                        6=>'#C41F3B',7=>'#0070DE',8=>'#69CCF0',9=>'#9482C9',
-                        10=>'#00FF96',11=>'#FF7D0A'
-                    ];
-
-                    // Conversion coordonnées WoW → pourcentage sur le PNG world.png (1002×668)
-                    // Chaque continent a son propre espace de coordonnées en WoW.
-                    // Bornes calées sur le PNG officiel d'Azeroth (WotLK) :
-                    //
-                    // Map 0 — Royaumes de l'Est
-                    //   X : [-17239, 228]  → zone du continent EK dans le PNG
-                    //   Y : [-11900, 16822] → WoW Y inversé (négatif = nord)
-                    //   Sur le PNG : EK occupe environ x=[54%,93%], y=[8%,92%]
-                    //
-                    // Map 1 — Kalimdor
-                    //   X : [-13866, 153]   → zone du continent Kalimdor dans le PNG
-                    //   Y : [-12766, 16500] → WoW Y inversé
-                    //   Sur le PNG : Kalimdor occupe environ x=[5%,43%], y=[8%,92%]
-                    //
-                    // Axe WoW : X croît vers le SUD, Y croît vers l'OUEST
-                    // Sur le PNG : en haut=nord, à gauche=ouest
-                    // Donc : pctX ∝ -Y_wow (Y wow négatif = est = droite)
-                    //         pctY ∝  X_wow (X wow positif = sud = bas)
-
-                    function wowToMapPct(float $x, float $y, int $map): array {
-                        if ($map === 0) {
-                            // Royaumes de l'Est
-                            // WoW X: [-17239 (nord) → 228 (sud)] → PNG Y: [8% → 92%]
-                            // WoW Y: [16822 (ouest) → -11900 (est)] → PNG X: [54% → 93%]
-                            $pctY = ($x - (-17239)) / (228 - (-17239));           // 0=nord,1=sud
-                            $pctX = (16822 - $y)   / (16822 - (-11900));          // 0=ouest,1=est
-                            // Mapper dans les zones du PNG
-                            $pctX = 0.54 + $pctX * (0.93 - 0.54);
-                            $pctY = 0.08 + $pctY * (0.92 - 0.08);
-                        } else {
-                            // Kalimdor
-                            // WoW X: [-13866 (nord) → 153 (sud)] → PNG Y: [8% → 92%]
-                            // WoW Y: [16500 (ouest) → -12766 (est)] → PNG X: [5% → 43%]
-                            $pctY = ($x - (-13866)) / (153 - (-13866));
-                            $pctX = (16500 - $y)    / (16500 - (-12766));
-                            $pctX = 0.05 + $pctX * (0.43 - 0.05);
-                            $pctY = 0.08 + $pctY * (0.92 - 0.08);
-                        }
-                        return [
-                            'x' => round(max(0, min(100, $pctX * 100)), 2),
-                            'y' => round(max(0, min(100, $pctY * 100)), 2),
-                        ];
-                    }
-
-                    // Préparer les données joueurs pour JS
-                    $playersJson = [];
-                    foreach ($onlineChars as $char) {
-                        $pct = wowToMapPct((float)$char['position_x'], (float)$char['position_y'], (int)$char['map']);
-                        $playersJson[] = [
-                            'name'  => htmlspecialchars($char['name']),
-                            'class' => $classes[$char['class']] ?? '?',
-                            'color' => $classColors[$char['class']] ?? '#8890ff',
-                            'level' => (int)$char['level'],
-                            'map'   => (int)$char['map'],
-                            'x'     => $pct['x'],
-                            'y'     => $pct['y'],
-                        ];
-                    }
-                    ?>
-                    <script>
-                    window._eonPlayers = <?= json_encode($playersJson) ?>;
-                    </script>
-
-                </div><!-- /realm-map-svg-wrap -->
-
-                <!-- Infos de connexion -->
-                <div class="realm-connect-info">
-                    <div>
-                        <div class="connect-label">Adresse du serveur</div>
-                        <div class="connect-value" id="realm-host">realm.eons-world.eu</div>
-                    </div>
-                    <div>
-                        <div class="connect-label">Port</div>
-                        <div class="connect-value">3724</div>
-                    </div>
-                    <div>
-                        <div class="connect-label">Version</div>
-                        <div class="connect-value" style="color:var(--gold-bright)">3.3.5a</div>
-                    </div>
-                    <button class="connect-copy-btn" onclick="copyRealmlist()">⎘ Copier le realmlist</button>
-                </div>
-            </div>
+    <!-- ── ADRESSE DU SERVEUR ────────────────────────────────── -->
+    <div class="realm-connect-info">
+        <div>
+            <div class="connect-label">Adresse du serveur</div>
+            <div class="connect-value" id="realm-host">realm.eons-world.eu</div>
         </div>
+        <div>
+            <div class="connect-label">Port</div>
+            <div class="connect-value">3724</div>
+        </div>
+        <div>
+            <div class="connect-label">Version</div>
+            <div class="connect-value" style="color:var(--gold-bright)">3.3.5a</div>
+        </div>
+        <button class="connect-copy-btn" onclick="copyRealmlist()">⎘ Copier le realmlist</button>
+    </div>
+
+    <div class="royaumes-grid">
 
         <!-- ── PANNEAU STATS ───────────────────────────────────── -->
         <div class="realm-stats-panel">
@@ -1060,18 +668,6 @@ require_once __DIR__ . '/header.php';
                         <span class="mini-stat-lbl">Mode jeu</span>
                     </div>
                 </div>
-            </div>
-
-            <!-- CTA rejoindre -->
-            <div class="realm-cta-card">
-                <div class="realm-cta-title">Prêt à rejoindre ?</div>
-                <p class="realm-cta-text">Créez votre compte et entrez dans la nuit arcanique d'Azeroth dès maintenant.</p>
-                <?php if ($isLoggedIn): ?>
-                    <a href="dashboard.php" class="btn btn-gold">⚗ &nbsp;Mon Tableau de Bord</a>
-                <?php else: ?>
-                    <a href="auth.php" class="btn btn-gold" style="margin-bottom:0.6rem">⚔ &nbsp;Créer un compte</a>
-                    <a href="#" class="btn btn-outline" style="display:flex;justify-content:center;margin-top:0.6rem">📖 &nbsp;Guide de connexion</a>
-                <?php endif; ?>
             </div>
 
         </div><!-- /realm-stats-panel -->
@@ -1240,142 +836,6 @@ function copyRealmlist() {
             .catch(() => {});
     }
     setInterval(refresh, 30000);
-})();
-
-// ── Carte des joueurs ────────────────────────────────────────
-(function() {
-    const players = window._eonPlayers || [];
-    const canvas  = document.getElementById('playerMapCanvas');
-    const tooltip = document.getElementById('mapTooltip');
-    const wrap    = canvas ? canvas.closest('.realm-map-svg-wrap') : null;
-    if (!canvas || !wrap) return;
-
-    function resize() {
-        canvas.width  = wrap.offsetWidth;
-        canvas.height = wrap.offsetHeight;
-        draw();
-    }
-
-    function draw() {
-        const ctx = canvas.getContext('2d');
-        const W = canvas.width, H = canvas.height;
-        ctx.clearRect(0, 0, W, H);
-        players.forEach(p => {
-            const px = (p.x / 100) * W;
-            const py = (p.y / 100) * H;
-            const color = p.color;
-
-            // Anneau pulsant (sera animé via rAF)
-            ctx.beginPath();
-            ctx.arc(px, py, 10, 0, Math.PI * 2);
-            ctx.strokeStyle = color.replace(')', ',0.25)').replace('rgb(', 'rgba(').replace('#', '');
-            // Simple ring
-            const ring = ctx.createRadialGradient(px, py, 4, px, py, 12);
-            ring.addColorStop(0, color + '33');
-            ring.addColorStop(1, color + '00');
-            ctx.fillStyle = ring;
-            ctx.fill();
-
-            // Point central
-            ctx.beginPath();
-            ctx.arc(px, py, 5, 0, Math.PI * 2);
-            ctx.fillStyle = color;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = 12;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-
-            // Petit point blanc central
-            ctx.beginPath();
-            ctx.arc(px, py, 1.8, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            ctx.fill();
-        });
-    }
-
-    // Animation pulsante
-    let t = 0;
-    function animate() {
-        const ctx = canvas.getContext('2d');
-        const W = canvas.width, H = canvas.height;
-        ctx.clearRect(0, 0, W, H);
-        players.forEach(p => {
-            const px = (p.x / 100) * W;
-            const py = (p.y / 100) * H;
-            const color = p.color;
-            const pulse = (Math.sin(t * 2 + px * 0.01) * 0.5 + 0.5); // 0..1
-
-            // Anneau pulsant externe
-            const ringR = 10 + pulse * 8;
-            const ringAlpha = (1 - pulse) * 0.5;
-            ctx.beginPath();
-            ctx.arc(px, py, ringR, 0, Math.PI * 2);
-            ctx.strokeStyle = color;
-            ctx.globalAlpha = ringAlpha;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            ctx.globalAlpha = 1;
-
-            // Halo soft
-            const grad = ctx.createRadialGradient(px, py, 0, px, py, 14);
-            grad.addColorStop(0, color + '55');
-            grad.addColorStop(1, 'transparent');
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(px, py, 14, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Point central
-            ctx.beginPath();
-            ctx.arc(px, py, 5, 0, Math.PI * 2);
-            ctx.fillStyle = color;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = 14;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-
-            // Éclat blanc
-            ctx.beginPath();
-            ctx.arc(px, py, 2, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255,255,255,0.95)';
-            ctx.fill();
-        });
-        t += 0.03;
-        requestAnimationFrame(animate);
-    }
-
-    // Tooltip au survol
-    wrap.addEventListener('mousemove', (e) => {
-        if (!tooltip) return;
-        const rect = wrap.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-        const W = wrap.offsetWidth, H = wrap.offsetHeight;
-        let found = null;
-        players.forEach(p => {
-            const px = (p.x / 100) * W;
-            const py = (p.y / 100) * H;
-            const dist = Math.sqrt((mx - px) ** 2 + (my - py) ** 2);
-            if (dist < 16) found = p;
-        });
-        if (found) {
-            tooltip.innerHTML =
-                '<div class="tip-name">' + found.name + '</div>' +
-                '<div class="tip-class" style="color:' + found.color + '">' + found.class + ' — Niv. ' + found.level + '</div>';
-            tooltip.style.display = 'block';
-            tooltip.style.left = (mx + 14) + 'px';
-            tooltip.style.top  = (my - 10) + 'px';
-        } else {
-            tooltip.style.display = 'none';
-        }
-    });
-    wrap.addEventListener('mouseleave', () => {
-        if (tooltip) tooltip.style.display = 'none';
-    });
-
-    window.addEventListener('resize', resize);
-    resize();
-    animate();
 })();
 </script>
 </body>
