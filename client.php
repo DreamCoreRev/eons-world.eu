@@ -13,6 +13,9 @@ define('CLIENT_FILE_URL',  '/uploads/client/Eons.rar');
 define('CLIENT_FILE_NAME', 'Eons.rar');
 define('CLIENT_FILE_SIZE_DISPLAY', '~18.8 Go');
 
+define('LAUNCHER_FILE_URL',  'https://eons-world.eu/uploads/launcher/Eons_Launcher.rar');
+define('LAUNCHER_FILE_NAME', 'Eons_Launcher.rar');
+
 if (isset($_GET['dl']) && $_GET['dl'] === '1') {
     if (!$isLoggedIn) {
         header('Location: auth.php');
@@ -20,6 +23,15 @@ if (isset($_GET['dl']) && $_GET['dl'] === '1') {
     }
     // Redirect direct — le navigateur gère le téléchargement
     header('Location: ' . CLIENT_FILE_URL);
+    exit;
+}
+
+if (isset($_GET['dl']) && $_GET['dl'] === 'launcher') {
+    if (!$isLoggedIn) {
+        header('Location: auth.php');
+        exit;
+    }
+    header('Location: ' . LAUNCHER_FILE_URL);
     exit;
 }
 
@@ -343,6 +355,70 @@ require_once __DIR__ . '/header.php';
     letter-spacing: 0.06em; color: var(--white);
 }
 
+/* ─── CARTE LAUNCHER ────────────────────────────────────────── */
+.launcher-card {
+    position: relative;
+    background: rgba(9,12,34,0.75);
+    border: 1px solid rgba(240,192,96,0.12);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+.launcher-card::before {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    border-style: solid; border-width: 0 56px 56px 0;
+    border-color: transparent rgba(240,192,96,0.1) transparent transparent;
+    z-index: 2;
+}
+.launcher-card::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 20% 0%, rgba(240,192,96,0.05) 0%, transparent 60%);
+    pointer-events: none;
+}
+.launcher-badge--tag {
+    background: rgba(240,192,96,0.08);
+    border: 1px solid rgba(240,192,96,0.22);
+    color: var(--gold-bright);
+}
+.launcher-badge--os {
+    background: rgba(95,255,176,0.07);
+    border: 1px solid rgba(95,255,176,0.18);
+    color: var(--success);
+}
+
+/* Bouton launcher — variante dorée */
+.btn-download-launcher {
+    display: inline-flex; align-items: center; gap: 0.7rem;
+    font-family: 'Cinzel', serif; font-size: 0.68rem;
+    font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 0.85rem 2.2rem; text-decoration: none;
+    background: linear-gradient(135deg, #3a2800 0%, #5a3e00 40%, #f0c060 50%, #5a3e00 60%, #3a2800 100%);
+    color: var(--white); border: none; cursor: pointer;
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+    box-shadow: 0 2px 24px rgba(240,192,96,0.35);
+    transition: all 0.3s; white-space: nowrap;
+    position: relative; overflow: hidden;
+    animation: launcherPulse 3s ease-in-out infinite;
+}
+.btn-download-launcher::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transform: translateX(-100%) skewX(-20deg); transition: transform 0.6s;
+}
+.btn-download-launcher:hover {
+    box-shadow: 0 4px 40px rgba(240,192,96,0.6);
+    transform: translateY(-2px);
+    animation: none;
+}
+.btn-download-launcher:hover::before { transform: translateX(150%) skewX(-20deg); }
+.btn-download-launcher svg { width: 18px; height: 18px; flex-shrink: 0; }
+@keyframes launcherPulse {
+    0%, 100% { box-shadow: 0 2px 24px rgba(240,192,96,0.35); }
+    50%       { box-shadow: 0 2px 40px rgba(240,192,96,0.6); }
+}
+
 /* ─── RESPONSIVE ────────────────────────────────────────────── */
 @media (max-width: 640px) {
     .client-page { padding: 5rem 1rem 4rem; }
@@ -428,6 +504,60 @@ require_once __DIR__ . '/header.php';
                 </a>
                 <span class="client-cta-note">
                     Connecté en tant que <strong style="color:var(--arcane-bright);font-style:normal;">
+                        <?= htmlspecialchars($_SESSION['account_name'] ?? 'Aventurier') ?>
+                    </strong>
+                </span>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- ── CARTE LAUNCHER ──────────────────────────────────────── -->
+    <div class="client-card launcher-card reveal">
+
+        <!-- Header -->
+        <div class="client-card-header">
+            <div class="client-icon">🚀</div>
+            <div class="client-info">
+                <div class="client-game-name">Eons — Launcher</div>
+                <div class="client-meta">
+                    <span class="client-badge launcher-badge--tag">⚡ Mise à jour auto</span>
+                    <span class="client-badge launcher-badge--os">🖥️ Windows</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="client-card-body">
+            <p class="client-desc">
+                Le Launcher Eons détecte et applique automatiquement les mises à jour du client.
+                Il suffit de le lancer avant chaque session — plus besoin de tout retélécharger manuellement.
+            </p>
+
+            <?php if (!$isLoggedIn): ?>
+            <div class="client-locked-banner">
+                <div class="client-locked-icon">🔒</div>
+                <div class="client-locked-text">
+                    <strong>Accès réservé aux membres</strong>
+                    <span>Connectez-vous pour accéder au téléchargement du Launcher.</span>
+                </div>
+            </div>
+            <div class="client-cta">
+                <a href="auth.php" class="btn-login-prompt">🔑 Se connecter</a>
+            </div>
+
+            <?php else: ?>
+            <div class="client-cta">
+                <a href="client.php?dl=launcher" class="btn-download-launcher">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Télécharger Eons_Launcher.rar
+                </a>
+                <span class="client-cta-note">
+                    Connecté en tant que <strong style="color:var(--gold-bright);font-style:normal;">
                         <?= htmlspecialchars($_SESSION['account_name'] ?? 'Aventurier') ?>
                     </strong>
                 </span>
