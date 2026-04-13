@@ -35,8 +35,22 @@ try {
     $chars = new PDO($dsn, DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
     $realmPlayers = (int)$chars->query("SELECT COUNT(*) FROM characters WHERE online = 1")->fetchColumn();
     $stmt = $chars->prepare("SELECT name, level, race, class, gender, zone, totaltime, money, online FROM characters WHERE account = :aid AND deleteDate IS NULL ORDER BY level DESC LIMIT 10");
-    $stmt->execute([':aid' => $accountId]);
-    $characters = $stmt->fetchAll();
+$stmt->execute([':aid' => $accountId]);
+$characters = $stmt->fetchAll();
+
+// Récupérer les noms de zones depuis eons_auth
+$zoneNames = [];
+if (!empty($characters)) {
+    $zoneIds = array_unique(array_filter(array_column($characters, 'zone')));
+    if ($zoneIds) {
+        $placeholders = implode(',', array_fill(0, count($zoneIds), '?'));
+        $zStmt = $db->prepare("SELECT id, zone_name FROM zones WHERE id IN ($placeholders)");
+        $zStmt->execute($zoneIds);
+        foreach ($zStmt->fetchAll() as $z) {
+            $zoneNames[$z['id']] = $z['zone_name'];
+        }
+    }
+}
 } catch (PDOException $e) { error_log('[AU Dashboard] Chars DB: ' . $e->getMessage()); }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -530,7 +544,9 @@ require_once __DIR__ . '/header.php';
                             <div class="char-meta">
                                 <span><?= $race ?></span>
                                 <span style="color:<?= $color ?>"><?= $cls ?></span>
-                                <?php if (!empty($char['zone'])): ?><span>· Zone <?= (int)$char['zone'] ?></span><?php endif; ?>
+                                <?php if (!empty($char['zone'])): ?>
+								<span>· <?= htmlspecialchars($zoneNames[$char['zone']] ?? 'Zone ' . (int)$char['zone']) ?></span>
+							<?php endif; ?>
                             </div>
                             <?php if (!empty($char['money'])): ?><div class="char-money"><?= formatMoney((int)$char['money']) ?></div><?php endif; ?>
                         </div>
