@@ -1,0 +1,1453 @@
+{
+    "success": true,
+    "version": "3.3.5a",
+    "generated_at": "2026-04-15 01:21:38",
+    "total_files": 206,
+    "total_size": 20557224684,
+    "total_size_mb": 19604.9,
+    "base_url": "https://eons-world.eu/eons_client/",
+    "files": [
+        {
+            "path": "Battle.net.dll",
+            "url": "https://eons-world.eu/eons_client/Battle.net.dll",
+            "size": 15588224,
+            "md5": "a6147be69fe9c30de9c3b3e5dbfcf1e7",
+            "modified": 1282132959
+        },
+        {
+            "path": "Data/common-2.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/common-2.MPQ",
+            "size": 2438278515,
+            "md5": "bcd43c26904d9a7ffd2812bb24c26c76",
+            "modified": 1775925465
+        },
+        {
+            "path": "Data/common.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/common.MPQ",
+            "size": 2227523921,
+            "md5": "2f1c5bae43df322078eabb62daf3a7c3",
+            "modified": 1235844930
+        },
+        {
+            "path": "Data/expansion.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/expansion.MPQ",
+            "size": 1921597620,
+            "md5": "3e1521042114788240d6eda27bca3224",
+            "modified": 1235845036
+        },
+        {
+            "path": "Data/frFR/AccountBilling.url",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/AccountBilling.url",
+            "size": 150,
+            "md5": "699da5d69c41f9b6338be54cf3e1891d",
+            "modified": 1250787074
+        },
+        {
+            "path": "Data/frFR/backup-frFR.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/backup-frFR.MPQ",
+            "size": 167928302,
+            "md5": "a5444578b169e782d68f57ad878ce98a",
+            "modified": 1282132974
+        },
+        {
+            "path": "Data/frFR/base-frFR.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/base-frFR.MPQ",
+            "size": 31155404,
+            "md5": "04899c12ae913fa11e736f6d1040736c",
+            "modified": 1250787222
+        },
+        {
+            "path": "Data/frFR/connection-help.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/connection-help.html",
+            "size": 10927,
+            "md5": "80e8f7859d290be9d6d5c97aa296e1c7",
+            "modified": 1250789674
+        },
+        {
+            "path": "Data/frFR/Credits.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Credits.html",
+            "size": 28857,
+            "md5": "d2fefa92d72e284f1405df4e6bb324aa",
+            "modified": 1250787221
+        },
+        {
+            "path": "Data/frFR/Credits_BC.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Credits_BC.html",
+            "size": 41169,
+            "md5": "31b4ecd66504d9cba61a0c95eb68a9e3",
+            "modified": 1250787221
+        },
+        {
+            "path": "Data/frFR/Credits_LK.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Credits_LK.html",
+            "size": 78066,
+            "md5": "96bc8eb0855272d54a6125ad7b6773b9",
+            "modified": 1262776064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/bg-botleft.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/bg-botleft.jpg",
+            "size": 1864,
+            "md5": "88fa9ef2a3f5c3afcb6514ec350fa500",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/bg-botright.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/bg-botright.jpg",
+            "size": 1691,
+            "md5": "2855472c63c207258965d48626c1b6a5",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/bg-bottom.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/bg-bottom.jpg",
+            "size": 2939,
+            "md5": "cbde9fcb111f4749709bf420a4db5c82",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/bg-left.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/bg-left.jpg",
+            "size": 2478,
+            "md5": "6db96970231e840541ff83e52900fcb5",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/bg-merge.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/bg-merge.jpg",
+            "size": 375,
+            "md5": "8e8795064c12cbed1b9346570638946d",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/bg-mergebot.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/bg-mergebot.jpg",
+            "size": 592,
+            "md5": "f8d86992052c8866bfd5d309bfce2f60",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/bg-middle.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/bg-middle.jpg",
+            "size": 1235,
+            "md5": "b5bf49c1f073e592ec636761602fe238",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/bg-right.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/bg-right.jpg",
+            "size": 2262,
+            "md5": "cd0b05de435c6bf685581e3d6060a01e",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/bg-top.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/bg-top.jpg",
+            "size": 7773,
+            "md5": "a2e72071398e22f4c8e817308066d838",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/Blizz.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/Blizz.jpg",
+            "size": 25635,
+            "md5": "c489e82a9749eb80fe623410ba48dcb3",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/BLWidget.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/BLWidget.jpg",
+            "size": 9497,
+            "md5": "df8a0a2ebe1bae6ed292696e9e3f85b9",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/BRWidget.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/BRWidget.jpg",
+            "size": 9454,
+            "md5": "3ce62a44b28f879d80410219cc451f64",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/contactinfo-over.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/contactinfo-over.gif",
+            "size": 2522,
+            "md5": "e33d67f79ca56e5cf1ceda8abcbf0e79",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/contactinfo.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/contactinfo.gif",
+            "size": 2074,
+            "md5": "1f04f77938d304a80d582b70aaebb243",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/mac-over.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/mac-over.jpg",
+            "size": 1971,
+            "md5": "22732e32273fc6f82363bd1bcfda8e61",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/mac.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/mac.jpg",
+            "size": 1893,
+            "md5": "73a69959b02c35f87edc512e040aa8a0",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/pc-over.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/pc-over.jpg",
+            "size": 1901,
+            "md5": "a93dcffb37ee6a15ca104b1aab1e23fd",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/pc.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/pc.jpg",
+            "size": 1809,
+            "md5": "e26f2addf31d13ac470ed3d511f3954c",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/readme-over.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/readme-over.gif",
+            "size": 2483,
+            "md5": "961b81d3c454cc6bd5729117b7afedf3",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/readme.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/readme.gif",
+            "size": 2265,
+            "md5": "b0e315d7f75f4cc29ca4219cd40ae81e",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/readme.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/readme.jpg",
+            "size": 15410,
+            "md5": "bed0adf702a85cdba1f8d6a1f6e358a9",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/troubleshooting-over.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/troubleshooting-over.gif",
+            "size": 2843,
+            "md5": "27408d2c1a23cad308c22b0d52bcbf3a",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/troubleshooting.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/troubleshooting.gif",
+            "size": 2866,
+            "md5": "809cbb9dad35560ce3c669c7f978c19f",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/troubleshooting.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/troubleshooting.jpg",
+            "size": 18255,
+            "md5": "9b227e48541c08ec4818467f6d5a0183",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/website-over.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/website-over.gif",
+            "size": 2225,
+            "md5": "62063e5294c7f23b1acf9b8abb77df9b",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/buttons/website.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/buttons/website.gif",
+            "size": 2062,
+            "md5": "7878adab9d6134b6a3a1ec10278ce647",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/BWidget.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/BWidget.jpg",
+            "size": 10358,
+            "md5": "0e77aa64029af11d503add88c9b6f1fb",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/CRepeat.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/CRepeat.jpg",
+            "size": 18653,
+            "md5": "8e730b47b708d500142c955c6a342ed1",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/dragon-left.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/dragon-left.jpg",
+            "size": 2718,
+            "md5": "a8cd5cd7f1a05fa89ef1ad66e6c7aa96",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/dragon-right.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/dragon-right.jpg",
+            "size": 2037,
+            "md5": "834894862daa2c8b3a976350eb56055a",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/gryphon-right.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/gryphon-right.jpg",
+            "size": 930,
+            "md5": "29f0d05380cf5d7cc19b6395f8ecb17f",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/help-request.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/help-request.gif",
+            "size": 543,
+            "md5": "1c49be42d4bff0a122ce4cb1537cf877",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/ItemMarker.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/ItemMarker.jpg",
+            "size": 19551,
+            "md5": "0d5832e88375abd18e1b9d01bdb64000",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/logo-blizzard.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/logo-blizzard.gif",
+            "size": 10253,
+            "md5": "08d46e1c0dee49b43bf23118ce09aec2",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/logo-blizzard.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/logo-blizzard.jpg",
+            "size": 10629,
+            "md5": "d44a9bf92971a63b54fcb47c71124d8e",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/logo-bnet.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/logo-bnet.gif",
+            "size": 10357,
+            "md5": "79971460890ad43ca39fc3ad0260d9bc",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/logo-wow.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/logo-wow.gif",
+            "size": 22940,
+            "md5": "d25238958e7600d84d037fe4d9b0ec4a",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/LRepeat.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/LRepeat.jpg",
+            "size": 13245,
+            "md5": "71e2154610445c84023ee5b1afac4175",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/MacLogo.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/MacLogo.jpg",
+            "size": 15588,
+            "md5": "b76842e74f79ff25130805c36acef70e",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/PCLogo.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/PCLogo.jpg",
+            "size": 1385,
+            "md5": "ef94317c97b138ecea2484a3285c83ab",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/pixel.gif",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/pixel.gif",
+            "size": 43,
+            "md5": "325472601571f31e1bf00674c368d335",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/RRepeat.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/RRepeat.jpg",
+            "size": 13460,
+            "md5": "929a96b2c9908775ef80103b06ac93de",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/splash.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/splash.jpg",
+            "size": 53481,
+            "md5": "12bde83a0937ae8c9d03f4990a2525e3",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/title-troubleshooting.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/title-troubleshooting.jpg",
+            "size": 27095,
+            "md5": "454c0d2ce084d08b4cf3b5172729f0e6",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/titles/contactinfo-mac.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/titles/contactinfo-mac.jpg",
+            "size": 25287,
+            "md5": "fdc29e3bc8fe2b3426aae15df1d822b2",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/titles/contactinfo-pc.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/titles/contactinfo-pc.jpg",
+            "size": 25175,
+            "md5": "51f03ed7c38a641a8d4e56a592d31ed4",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/titles/readme-mac.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/titles/readme-mac.jpg",
+            "size": 26631,
+            "md5": "fccbccb435830f282a7d973ddac5978d",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/titles/readme-pc.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/titles/readme-pc.jpg",
+            "size": 26562,
+            "md5": "99597d4a591a1f9cc77dbd938022690b",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/titles/troubleshooting-mac.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/titles/troubleshooting-mac.jpg",
+            "size": 28732,
+            "md5": "3096ce937978d6451723c25305cbf2d4",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/titles/troubleshooting-pc.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/titles/troubleshooting-pc.jpg",
+            "size": 28635,
+            "md5": "904b56745eac272e18366a628c0a9124",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/TLWidget.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/TLWidget.jpg",
+            "size": 9481,
+            "md5": "a60268c3c008a4c75370a4ba20ba6745",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/TRWidget.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/TRWidget.jpg",
+            "size": 9440,
+            "md5": "cc2dc6c673134b5abd30709bb2e5b412",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Images/TWidget.jpg",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Images/TWidget.jpg",
+            "size": 10340,
+            "md5": "d085d2a56eecc0409ff7ec7c5dc12c24",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/BSpacer.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/BSpacer.html",
+            "size": 734,
+            "md5": "864678186f910cc983be1667c4f3c0ec",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/CSpacer.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/CSpacer.html",
+            "size": 347,
+            "md5": "4b4531c6ff5d43c4a240ac2f78a0510b",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/Detector.js",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/Detector.js",
+            "size": 377,
+            "md5": "2ca01abba85888082d19f6177e4efcb3",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/Greeting.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/Greeting.html",
+            "size": 1657,
+            "md5": "c8e152ece928269778a5f7c7d0f031b4",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/Index.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/Index.html",
+            "size": 1726,
+            "md5": "e3ed678403696c0de0b068fbb1ec592d",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/LBorder.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/LBorder.html",
+            "size": 388,
+            "md5": "599e800416c42ffab6b09c6bfb5c1515",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/Nav.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/Nav.html",
+            "size": 1903,
+            "md5": "7d173b34eee0869549f49fe653fa681a",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/RBorder.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/RBorder.html",
+            "size": 399,
+            "md5": "1030774d24e8c9f2538a6c9e5c24e84c",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/Requirements.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/Requirements.html",
+            "size": 1417,
+            "md5": "57e349ad00f3758ea580de01d6d9ebec",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/Splash.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/Splash.html",
+            "size": 1149,
+            "md5": "a7f1db46a07fd938a56a491d162f6e4b",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/Styles.css",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/Styles.css",
+            "size": 5953,
+            "md5": "d2b0ed855885b46b9b1c61babfe568cc",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/StylesLeft.css",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/StylesLeft.css",
+            "size": 5694,
+            "md5": "e33b0baef846264f1923bfedbed03262",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/TBorder.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/TBorder.html",
+            "size": 2694,
+            "md5": "98aeec2082308d5d2d46996cbb7667c6",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Layout/TheScript.js",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Layout/TheScript.js",
+            "size": 7456,
+            "md5": "f7210134e84ed2471911bcec8c173d2b",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Manual.pdf",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Manual.pdf",
+            "size": 3945924,
+            "md5": "d5bbbd3aa518d92b285aa42d2ef5560e",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Manual_TBC.pdf",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Manual_TBC.pdf",
+            "size": 1360481,
+            "md5": "92f2bca6e5cdd05dc9042eb816c8e1cc",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Documentation/Manual_WLK.pdf",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Manual_WLK.pdf",
+            "size": 1663934,
+            "md5": "92dbae57bf57f6a3ea385b30cac72195",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/(Mac)Foreword.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/%28Mac%29Foreword.html",
+            "size": 1676,
+            "md5": "0ebcae784f79d2f9eba505f00eab5e61",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/(Mac)Installation.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/%28Mac%29Installation.html",
+            "size": 1610,
+            "md5": "5dc42bea239887197c1b41ec1f7bd452",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/(Mac)Patching.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/%28Mac%29Patching.html",
+            "size": 1825,
+            "md5": "78f482e4084bcbf5ff29b64eea1c0d20",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/(Mac)ReadMeMenu.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/%28Mac%29ReadMeMenu.html",
+            "size": 2442,
+            "md5": "8b4752d61f1c6c85b38ad054b7ce227e",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/(Mac)SystemRequirements.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/%28Mac%29SystemRequirements.html",
+            "size": 2578,
+            "md5": "c820faf0593d58779731b92270f9e986",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/(Mac)Uninstall.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/%28Mac%29Uninstall.html",
+            "size": 1996,
+            "md5": "f8eed36c881d62af8c7b66b1821a8c14",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/(PC)Foreword.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/%28PC%29Foreword.html",
+            "size": 1667,
+            "md5": "3854e04b724d1ef4929ba8c49d42290e",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/(PC)Installation.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/%28PC%29Installation.html",
+            "size": 2268,
+            "md5": "9036e4f21da339e61a475beef9e776d0",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/(PC)Patching.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/%28PC%29Patching.html",
+            "size": 1831,
+            "md5": "70240c5017ed0597b86dee30258375a6",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/(PC)ReadMeMenu.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/%28PC%29ReadMeMenu.html",
+            "size": 2439,
+            "md5": "d2fb0039ab40ab3da4445fd4035986f6",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/(PC)SystemRequirements.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/%28PC%29SystemRequirements.html",
+            "size": 2808,
+            "md5": "aa80919a4909c65ece042044601f1c44",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/(PC)Uninstall.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/%28PC%29Uninstall.html",
+            "size": 2574,
+            "md5": "47f4e714401f84bfaf8df5fedf56d42a",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/BasicCommands.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/BasicCommands.html",
+            "size": 17157,
+            "md5": "9c259ecaee826d13c73bb8256281ed5f",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/CharacterNaming.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/CharacterNaming.html",
+            "size": 2128,
+            "md5": "d6a9dcafa37bbfe2de609a4c00f5301d",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/EULA.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/EULA.html",
+            "size": 29383,
+            "md5": "905c1c5c613110a2008571277b33998b",
+            "modified": 1282132959
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/GettingStarted.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/GettingStarted.html",
+            "size": 5089,
+            "md5": "1120cb6444cc022e12fac1ec1968d5f0",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/ManualErrata.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/ManualErrata.html",
+            "size": 1392,
+            "md5": "d7692f4aaf60c96572488de728242212",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe/RealmSelection.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe/RealmSelection.html",
+            "size": 5520,
+            "md5": "b8943cc52b6f3e9d3261e148c95a5888",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/ReadMe.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/ReadMe.html",
+            "size": 1662,
+            "md5": "070be7db84c752301931f1e57e3ef510",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Support/(Mac)SupportMenu.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Support/%28Mac%29SupportMenu.html",
+            "size": 4022,
+            "md5": "9eafff26db8b0f6bf854de978a684dcf",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Support/(Mac)TechnicalSupport.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Support/%28Mac%29TechnicalSupport.html",
+            "size": 3490,
+            "md5": "f5588a4a1b8fe01682058694028b650a",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Support/(PC)SupportMenu.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Support/%28PC%29SupportMenu.html",
+            "size": 4037,
+            "md5": "6bd6db7803896ae20505561f35e09240",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Support/(PC)TechnicalSupport.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Support/%28PC%29TechnicalSupport.html",
+            "size": 5997,
+            "md5": "732823a4dfeda1e042c1ad845c987d09",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Support/AccountAdministration.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Support/AccountAdministration.html",
+            "size": 4898,
+            "md5": "5d2e5b23cc55977bec6194bff30d6246",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Support/BlizzardInsider.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Support/BlizzardInsider.html",
+            "size": 3917,
+            "md5": "3d6b8e41eae9211f9f9e83a5bc0c10ae",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Support/Employment.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Support/Employment.html",
+            "size": 3952,
+            "md5": "fddd15fc2970e3aa611ff63574012783",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Support/GameSuggestions.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Support/GameSuggestions.html",
+            "size": 1304,
+            "md5": "d237aa811d9c50e57f2177ad148198a7",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Support/GameSupport.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Support/GameSupport.html",
+            "size": 3952,
+            "md5": "fddd15fc2970e3aa611ff63574012783",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Support/Password.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Support/Password.html",
+            "size": 3250,
+            "md5": "d728b8d44eddb7d7f69700b04829ef81",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(Mac)AudioProblems.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28Mac%29AudioProblems.html",
+            "size": 1711,
+            "md5": "14dc7c2a3ec590f7f874d2b308482231",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(Mac)BlizzardDownloaderProblems.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28Mac%29BlizzardDownloaderProblems.html",
+            "size": 3611,
+            "md5": "a6d8d9c5ba79cd25f8450a0731bc9103",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(Mac)ConnectionLoginProblems.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28Mac%29ConnectionLoginProblems.html",
+            "size": 7957,
+            "md5": "eb68892d1a1fd05c297e5b66ec36ea39",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(Mac)GameplayProblems.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28Mac%29GameplayProblems.html",
+            "size": 3096,
+            "md5": "b671012dbe83faed5eeb10831fc1762a",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(Mac)Install.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28Mac%29Install.html",
+            "size": 1127,
+            "md5": "7eb532e766438df043b7cb0fa9ffd06b",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(Mac)PreventiveMaintenance.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28Mac%29PreventiveMaintenance.html",
+            "size": 5974,
+            "md5": "e1a596e6b8593e5c576505840942dc56",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(Mac)StartupProblems.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28Mac%29StartupProblems.html",
+            "size": 5794,
+            "md5": "e74f084f7a81fdf3b0ef3d3cf97c7585",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(Mac)TroubleshootingMenu.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28Mac%29TroubleshootingMenu.html",
+            "size": 2423,
+            "md5": "8a0e4980140e37e6b92d8c8099be3dc8",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(Mac)VideoProblems.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28Mac%29VideoProblems.html",
+            "size": 8276,
+            "md5": "70b137313b8385f3c2cc84c3b8edfd0a",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(PC)AudioProblems.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28PC%29AudioProblems.html",
+            "size": 5359,
+            "md5": "a79baee9a26b1a757eeb6fc36ec95503",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(PC)BlizzardDownloaderProblems.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28PC%29BlizzardDownloaderProblems.html",
+            "size": 5371,
+            "md5": "5aac42887616a6b5c0c1a78ab22d7e77",
+            "modified": 1250787065
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(PC)ConnectionLoginProblems.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28PC%29ConnectionLoginProblems.html",
+            "size": 8105,
+            "md5": "02823894b8e7f6edb6e4121fcaa2d556",
+            "modified": 1250789674
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(PC)GameplayProblems.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28PC%29GameplayProblems.html",
+            "size": 3187,
+            "md5": "be751aedefc51c2826e0fc9e04b05aa1",
+            "modified": 1250789674
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(PC)Install.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28PC%29Install.html",
+            "size": 2465,
+            "md5": "f6f72b32f8d8948a26f01d937a8124cf",
+            "modified": 1250789674
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(PC)PreventiveMaintenance.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28PC%29PreventiveMaintenance.html",
+            "size": 10647,
+            "md5": "c75d1cfa3c5273f0886591f201b7e3fa",
+            "modified": 1250789674
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(PC)StartupProblems.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28PC%29StartupProblems.html",
+            "size": 6375,
+            "md5": "8696f960f5c6625695465f0276b905f2",
+            "modified": 1250789674
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(PC)TroubleshootingMenu.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28PC%29TroubleshootingMenu.html",
+            "size": 2400,
+            "md5": "133885c99313a021892a3d677c7a7085",
+            "modified": 1250789674
+        },
+        {
+            "path": "Data/frFR/Documentation/Troubleshooting/(PC)VideoProblems.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Documentation/Troubleshooting/%28PC%29VideoProblems.html",
+            "size": 10372,
+            "md5": "dacea7fe5384eb12168d89150662c280",
+            "modified": 1250789674
+        },
+        {
+            "path": "Data/frFR/eula.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/eula.html",
+            "size": 29383,
+            "md5": "905c1c5c613110a2008571277b33998b",
+            "modified": 1275347011
+        },
+        {
+            "path": "Data/frFR/expansion-locale-frFR.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/expansion-locale-frFR.MPQ",
+            "size": 16938870,
+            "md5": "e924c6cbc4cadd6be6a9e3e2523968ae",
+            "modified": 1235844421
+        },
+        {
+            "path": "Data/frFR/expansion-speech-frFR.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/expansion-speech-frFR.MPQ",
+            "size": 265532905,
+            "md5": "52103aa7531296fac8d45bd92fab2953",
+            "modified": 1235845085
+        },
+        {
+            "path": "Data/frFR/Interface/Cinematics/Logo_1024.avi",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Interface/Cinematics/Logo_1024.avi",
+            "size": 6467584,
+            "md5": "2f6dc07c88c4c15f668e147cd72324e7",
+            "modified": 1235843840
+        },
+        {
+            "path": "Data/frFR/Interface/Cinematics/Logo_800.avi",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Interface/Cinematics/Logo_800.avi",
+            "size": 4554752,
+            "md5": "2472c618f6c8b4e9cb2271b7bac1aaf2",
+            "modified": 1235843840
+        },
+        {
+            "path": "Data/frFR/Interface/Cinematics/WOW_FotLK_1024.avi",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Interface/Cinematics/WOW_FotLK_1024.avi",
+            "size": 66007136,
+            "md5": "b8f640fa612553a122851b231638e048",
+            "modified": 1275346607
+        },
+        {
+            "path": "Data/frFR/Interface/Cinematics/WOW_FotLK_800.avi",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Interface/Cinematics/WOW_FotLK_800.avi",
+            "size": 57244820,
+            "md5": "1f58d03b4be2d7ea26a588fbbfac4322",
+            "modified": 1275346608
+        },
+        {
+            "path": "Data/frFR/Interface/Cinematics/WOW_Intro_1024.avi",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Interface/Cinematics/WOW_Intro_1024.avi",
+            "size": 48318464,
+            "md5": "4931ad40e47f3ed7ed291d2dfd1f258c",
+            "modified": 1235843847
+        },
+        {
+            "path": "Data/frFR/Interface/Cinematics/WOW_Intro_800.avi",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Interface/Cinematics/WOW_Intro_800.avi",
+            "size": 41881600,
+            "md5": "12d2cb8d78d36f3c0118b4680092c88d",
+            "modified": 1235843843
+        },
+        {
+            "path": "Data/frFR/Interface/Cinematics/WOW_Intro_BC_1024.avi",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Interface/Cinematics/WOW_Intro_BC_1024.avi",
+            "size": 47577088,
+            "md5": "2c7a5a80180c74c3e23cfc41dc1509b7",
+            "modified": 1235843854
+        },
+        {
+            "path": "Data/frFR/Interface/Cinematics/WOW_Intro_BC_800.avi",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Interface/Cinematics/WOW_Intro_BC_800.avi",
+            "size": 41263104,
+            "md5": "4adf2864d75cd395d25c8fe3e83426f0",
+            "modified": 1235843851
+        },
+        {
+            "path": "Data/frFR/Interface/Cinematics/WOW_Intro_LK_1024.avi",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Interface/Cinematics/WOW_Intro_LK_1024.avi",
+            "size": 56177056,
+            "md5": "701a2fe668ff69cfe7fa6641ef73b303",
+            "modified": 1250787059
+        },
+        {
+            "path": "Data/frFR/Interface/Cinematics/WOW_Intro_LK_800.avi",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Interface/Cinematics/WOW_Intro_LK_800.avi",
+            "size": 48820376,
+            "md5": "3cb4b3c58f1f1601e19ff8f9e71717e4",
+            "modified": 1250787057
+        },
+        {
+            "path": "Data/frFR/Interface/Cinematics/WOW_Wrathgate_1024.avi",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Interface/Cinematics/WOW_Wrathgate_1024.avi",
+            "size": 75685834,
+            "md5": "57384c939a6b0471353097139b27d61a",
+            "modified": 1250787064
+        },
+        {
+            "path": "Data/frFR/Interface/Cinematics/WOW_Wrathgate_800.avi",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/Interface/Cinematics/WOW_Wrathgate_800.avi",
+            "size": 65683896,
+            "md5": "ca4f3aee23d8ea17f521c1921972a321",
+            "modified": 1250787061
+        },
+        {
+            "path": "Data/frFR/lichking-locale-frFR.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/lichking-locale-frFR.MPQ",
+            "size": 12642308,
+            "md5": "902103413ef6e62e7a56dc47d5c79baa",
+            "modified": 1250787073
+        },
+        {
+            "path": "Data/frFR/lichking-speech-frFR.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/lichking-speech-frFR.MPQ",
+            "size": 20557745,
+            "md5": "c09fa7ec7915e2e17801b3e0a4b36fae",
+            "modified": 1250787221
+        },
+        {
+            "path": "Data/frFR/locale-frFR.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/locale-frFR.MPQ",
+            "size": 200163220,
+            "md5": "a72ddd23c06d139c048028c9213ba530",
+            "modified": 1235844447
+        },
+        {
+            "path": "Data/frFR/patch-frFR-2.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/patch-frFR-2.MPQ",
+            "size": 226194452,
+            "md5": "44283dfdac9ced6f95d61cd1c72441c1",
+            "modified": 1275345808
+        },
+        {
+            "path": "Data/frFR/patch-frFR-3.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/patch-frFR-3.MPQ",
+            "size": 106769367,
+            "md5": "dde474bfe82fe7dcdfaa5c57f3bd0650",
+            "modified": 1282133040
+        },
+        {
+            "path": "Data/frFR/patch-frFR-4.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/patch-frFR-4.MPQ",
+            "size": 1025484,
+            "md5": "5aec594dd898cb88ad3f279b5316e768",
+            "modified": 1467452074
+        },
+        {
+            "path": "Data/frFR/patch-frFR-5.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/patch-frFR-5.MPQ",
+            "size": 369924747,
+            "md5": "b69a273db928ce7aaa29ab562c97b7e8",
+            "modified": 1776057305
+        },
+        {
+            "path": "Data/frFR/patch-frFR-6.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/patch-frFR-6.MPQ",
+            "size": 94675,
+            "md5": "25593238f916c58e9b633cb54f4f96e8",
+            "modified": 1745929082
+        },
+        {
+            "path": "Data/frFR/patch-frFR-7.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/patch-frFR-7.MPQ",
+            "size": 584629,
+            "md5": "e9ce553f7c0cdb571d0516e5430fbc4d",
+            "modified": 1776057210
+        },
+        {
+            "path": "Data/frFR/patch-frFR-8.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/patch-frFR-8.MPQ",
+            "size": 342290,
+            "md5": "0ed6dca37ef820d615d62e5ece652505",
+            "modified": 1776054862
+        },
+        {
+            "path": "Data/frFR/patch-frFR-9.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/patch-frFR-9.MPQ",
+            "size": 279707,
+            "md5": "c85f1957f0267574f672f27f2a627c54",
+            "modified": 1761507040
+        },
+        {
+            "path": "Data/frFR/patch-frFR-A.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/patch-frFR-A.MPQ",
+            "size": 21035568,
+            "md5": "5ad39d24b653b07d05b63c15b4660ed3",
+            "modified": 1776136528
+        },
+        {
+            "path": "Data/frFR/patch-frFR-X.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/patch-frFR-X.MPQ",
+            "size": 48674,
+            "md5": "89b6303942293801c36c1bda2fec9414",
+            "modified": 1775926496
+        },
+        {
+            "path": "Data/frFR/patch-frFR-Z.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/patch-frFR-Z.MPQ",
+            "size": 73813,
+            "md5": "acb7a4084cd47d07a435f38318b6892f",
+            "modified": 1775949650
+        },
+        {
+            "path": "Data/frFR/patch-frFR.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/patch-frFR.MPQ",
+            "size": 552511086,
+            "md5": "965e8f6b6e42c803caed72547c92d8bc",
+            "modified": 1262776631
+        },
+        {
+            "path": "Data/frFR/realmlist.wtf",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/realmlist.wtf",
+            "size": 33,
+            "md5": "e52a478259ee78216e712af59e7f3e73",
+            "modified": 1775863303
+        },
+        {
+            "path": "Data/frFR/speech-frFR.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/speech-frFR.MPQ",
+            "size": 441806471,
+            "md5": "4e65a0a7aac43af6cb6f1c8c695398c8",
+            "modified": 1235844449
+        },
+        {
+            "path": "Data/frFR/TechSupport.url",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/TechSupport.url",
+            "size": 150,
+            "md5": "699da5d69c41f9b6338be54cf3e1891d",
+            "modified": 1250789674
+        },
+        {
+            "path": "Data/frFR/termination.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/termination.html",
+            "size": 3212,
+            "md5": "d8f85b3e5b2b6c6c4b982c2b527c8681",
+            "modified": 1250787221
+        },
+        {
+            "path": "Data/frFR/tos.html",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/tos.html",
+            "size": 63787,
+            "md5": "c66417b8b08dff78c17a25fb6bb7109b",
+            "modified": 1331230057
+        },
+        {
+            "path": "Data/frFR/WTF/DefaultBindings.wtf",
+            "url": "https://eons-world.eu/eons_client/Data/frFR/WTF/DefaultBindings.wtf",
+            "size": 4227,
+            "md5": "eb1943bea55e6bf9377d4839fe835d9b",
+            "modified": 1250789674
+        },
+        {
+            "path": "Data/lichking.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/lichking.MPQ",
+            "size": 2581185567,
+            "md5": "9d6cbae74682390d433593e89b88e6ea",
+            "modified": 1250787482
+        },
+        {
+            "path": "Data/patch-2.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/patch-2.MPQ",
+            "size": 1403129115,
+            "md5": "bd70d94204babd93ff4ab610190248e4",
+            "modified": 1275345781
+        },
+        {
+            "path": "Data/patch-3.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/patch-3.MPQ",
+            "size": 605089137,
+            "md5": "35733b76fcf0f95a0d8240d1f36cc5c3",
+            "modified": 1282133030
+        },
+        {
+            "path": "Data/patch-4.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/patch-4.MPQ",
+            "size": 715918549,
+            "md5": "1de09aa12a4f4295951489fe5cde1787",
+            "modified": 1518192124
+        },
+        {
+            "path": "Data/patch-5.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/patch-5.MPQ",
+            "size": 109760055,
+            "md5": "71b02c061b16d1778bd56a584f5b6fb2",
+            "modified": 1776130421
+        },
+        {
+            "path": "Data/patch-6.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/patch-6.MPQ",
+            "size": 847218350,
+            "md5": "540ae4d649aed8c4f8b3ec661f085379",
+            "modified": 1775858458
+        },
+        {
+            "path": "Data/patch-7.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/patch-7.MPQ",
+            "size": 356412906,
+            "md5": "1cff48e4a1148232f7e967e83e980204",
+            "modified": 1515785971
+        },
+        {
+            "path": "Data/patch-8.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/patch-8.MPQ",
+            "size": 33804045,
+            "md5": "08f7dbce8b4c824cd8058e07ac4c09c4",
+            "modified": 1518192248
+        },
+        {
+            "path": "Data/patch-9.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/patch-9.MPQ",
+            "size": 281220410,
+            "md5": "fb0b0b8951d7f9a43771d27ef72104af",
+            "modified": 1775920259
+        },
+        {
+            "path": "Data/patch.MPQ",
+            "url": "https://eons-world.eu/eons_client/Data/patch.MPQ",
+            "size": 4005207489,
+            "md5": "98536558643648f65cd268dbb0b824f7",
+            "modified": 1262776550
+        },
+        {
+            "path": "dbghelp.dll",
+            "url": "https://eons-world.eu/eons_client/dbghelp.dll",
+            "size": 1039728,
+            "md5": "72ce8558590472777b8b5da70919e631",
+            "modified": 1250787073
+        },
+        {
+            "path": "DivxDecoder.dll",
+            "url": "https://eons-world.eu/eons_client/DivxDecoder.dll",
+            "size": 413696,
+            "md5": "57e72cae12091dafa29a8e4db8b4f1d1",
+            "modified": 1250789739
+        },
+        {
+            "path": "Eons.exe",
+            "url": "https://eons-world.eu/eons_client/Eons.exe",
+            "size": 7880192,
+            "md5": "019b413903944a5b7e3f6d088df93149",
+            "modified": 1749388714
+        },
+        {
+            "path": "EonsError.exe",
+            "url": "https://eons-world.eu/eons_client/EonsError.exe",
+            "size": 350360,
+            "md5": "469e0c1f7a5904fdae577c492d4186b1",
+            "modified": 1282132959
+        },
+        {
+            "path": "ijl15.dll",
+            "url": "https://eons-world.eu/eons_client/ijl15.dll",
+            "size": 372736,
+            "md5": "1aa06c81a0621e277e755b965b5e4b5f",
+            "modified": 1250787074
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_AchievementUI/Blizzard_AchievementUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_AchievementUI/Blizzard_AchievementUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_ArenaUI/Blizzard_ArenaUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_ArenaUI/Blizzard_ArenaUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_AuctionUI/Blizzard_AuctionUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_AuctionUI/Blizzard_AuctionUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_BarbershopUI/Blizzard_BarbershopUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_BarbershopUI/Blizzard_BarbershopUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_BattlefieldMinimap/Blizzard_BattlefieldMinimap.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_BattlefieldMinimap/Blizzard_BattlefieldMinimap.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_BindingUI/Blizzard_BindingUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_BindingUI/Blizzard_BindingUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_Calendar/Blizzard_Calendar.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_Calendar/Blizzard_Calendar.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_CombatLog/Blizzard_CombatLog.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_CombatLog/Blizzard_CombatLog.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_CombatText/Blizzard_CombatText.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_CombatText/Blizzard_CombatText.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_DebugTools/Blizzard_DebugTools.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_DebugTools/Blizzard_DebugTools.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_GlyphUI/Blizzard_GlyphUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_GlyphUI/Blizzard_GlyphUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_GMChatUI/Blizzard_GMChatUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_GMChatUI/Blizzard_GMChatUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_GMSurveyUI/Blizzard_GMSurveyUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_GMSurveyUI/Blizzard_GMSurveyUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_GuildBankUI/Blizzard_GuildBankUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_GuildBankUI/Blizzard_GuildBankUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_InspectUI/Blizzard_InspectUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_InspectUI/Blizzard_InspectUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_ItemSocketingUI/Blizzard_ItemSocketingUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_ItemSocketingUI/Blizzard_ItemSocketingUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_MacroUI/Blizzard_MacroUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_MacroUI/Blizzard_MacroUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_RaidUI/Blizzard_RaidUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_RaidUI/Blizzard_RaidUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_TalentUI/Blizzard_TalentUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_TalentUI/Blizzard_TalentUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_TimeManager/Blizzard_TimeManager.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_TimeManager/Blizzard_TimeManager.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_TokenUI/Blizzard_TokenUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_TokenUI/Blizzard_TokenUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_TradeSkillUI/Blizzard_TradeSkillUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_TradeSkillUI/Blizzard_TradeSkillUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "Interface/AddOns/Blizzard_TrainerUI/Blizzard_TrainerUI.pub",
+            "url": "https://eons-world.eu/eons_client/Interface/AddOns/Blizzard_TrainerUI/Blizzard_TrainerUI.pub",
+            "size": 257,
+            "md5": "06062aede3649549292c1677f18158ff",
+            "modified": 1317661109
+        },
+        {
+            "path": "msvcr80.dll",
+            "url": "https://eons-world.eu/eons_client/msvcr80.dll",
+            "size": 632656,
+            "md5": "1169436ee42f860c7db37a4692b38f0e",
+            "modified": 1282132810
+        },
+        {
+            "path": "Repair.exe",
+            "url": "https://eons-world.eu/eons_client/Repair.exe",
+            "size": 975512,
+            "md5": "d0658402acec30dd84a334c98ab7d68c",
+            "modified": 1282132719
+        },
+        {
+            "path": "Scan.dll",
+            "url": "https://eons-world.eu/eons_client/Scan.dll",
+            "size": 49924,
+            "md5": "beaa5d244a8551117cfb37f843800ef6",
+            "modified": 1410418294
+        },
+        {
+            "path": "unicows.dll",
+            "url": "https://eons-world.eu/eons_client/unicows.dll",
+            "size": 245408,
+            "md5": "e1102cedf0c818984c2aca2a666d4c5f",
+            "modified": 1250787074
+        }
+    ]
+}
