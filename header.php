@@ -3,8 +3,30 @@
 //  header.php — Eons CMS | Arcanic Theme Enhanced
 // ============================================================
 
-$isLoggedIn = !empty($_SESSION['logged_in']) && !empty($_SESSION['account_id']);
+$isLoggedIn  = !empty($_SESSION['logged_in']) && !empty($_SESSION['account_id']);
 $navUsername = htmlspecialchars($_SESSION['account_name'] ?? '');
+$isAdmin     = false;
+
+if ($isLoggedIn) {
+    // Utilise le cache session pour éviter une requête par page
+    if (!isset($_SESSION['security_level'])) {
+        try {
+            $db   = getAuthDB();
+            $stmt = $db->prepare(
+                "SELECT COALESCE(aa.SecurityLevel, 0) AS lvl
+                 FROM account a
+                 LEFT JOIN account_access aa ON aa.AccountID = a.id AND aa.RealmID = -1
+                 WHERE a.id = :id LIMIT 1"
+            );
+            $stmt->execute([':id' => (int)$_SESSION['account_id']]);
+            $row = $stmt->fetch();
+            $_SESSION['security_level'] = (int)($row['lvl'] ?? 0);
+        } catch (\PDOException $e) {
+            $_SESSION['security_level'] = 0;
+        }
+    }
+    $isAdmin = $_SESSION['security_level'] >= 3;
+}
 
 if (!isset($pageTitle)) $pageTitle = 'Eons';
 ?>
@@ -212,6 +234,37 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
             gap: 0.6rem;
             align-items: center;
             flex-shrink: 0;
+        }
+
+        /* ─── BOUTON ADMIN ──────────────────────────────────────────── */
+        .btn-admin-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-family: 'Cinzel', serif;
+            font-size: 0.58rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            text-decoration: none;
+            padding: 0.32rem 0.7rem;
+            border: 1px solid rgba(240,192,96,0.35);
+            border-radius: 6px;
+            color: var(--gold-bright);
+            background: rgba(200,144,40,0.08);
+            transition: background 0.25s, border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .btn-admin-nav:hover {
+            background: rgba(200,144,40,0.18);
+            border-color: var(--gold-bright);
+            box-shadow: 0 0 14px rgba(240,192,96,0.3);
+            transform: translateY(-1px);
+        }
+        .btn-admin-nav .admin-lock {
+            font-size: 0.75rem;
+            line-height: 1;
         }
 
         /* ─── GREETING ──────────────────────────────────────────────── */
@@ -655,7 +708,13 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
 
     <div class="nav-actions">
         <?php if ($isLoggedIn): ?>
-            <span class="nav-greeting">⚔ <span><?= $navUsername ?></span></span>
+            <?php if ($isAdmin): ?>
+                <a href="admin.php" class="btn-admin-nav" title="Panel Administrateur">
+                    <span class="admin-lock">🔒</span><?= $navUsername ?>
+                </a>
+            <?php else: ?>
+                <span class="nav-greeting">⚔ <span><?= $navUsername ?></span></span>
+            <?php endif; ?>
             <a href="dashboard.php" class="btn btn-outline">⚗ Mon compte</a>
             <a href="logout.php" class="btn-logout-nav">Quitter</a>
         <?php else: ?>
@@ -681,6 +740,9 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
     <div class="nav-mobile-account">
         <?php if ($isLoggedIn): ?>
             <p class="nav-mobile-greeting">Bienvenue, <span><?= $navUsername ?></span></p>
+            <?php if ($isAdmin): ?>
+                <a href="admin.php" class="btn-admin-nav" style="justify-content:center;">🔒 Panel Admin</a>
+            <?php endif; ?>
             <a href="dashboard.php" class="btn btn-outline" style="justify-content:center;">⚗ Mon compte</a>
             <a href="logout.php" class="btn-logout-mobile">⚔ Déconnexion</a>
         <?php else: ?>
