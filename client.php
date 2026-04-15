@@ -13,8 +13,8 @@ define('CLIENT_FILE_URL',  '/uploads/client/Eons.rar');
 define('CLIENT_FILE_NAME', 'Eons.rar');
 define('CLIENT_FILE_SIZE_DISPLAY', '~19.1 Go');
 
-define('LAUNCHER_FILE_URL',  'https://eons-world.eu/uploads/launcher/_LauncherEonsWorld.rar');
-define('LAUNCHER_FILE_NAME', '_LauncherEonsWorld.rar');
+define('LAUNCHER_FILE_URL',  'https://eons-world.eu/uploads/launcher/_LauncherEonsWorld_.rar');
+define('LAUNCHER_FILE_NAME', '_LauncherEonsWorld_.rar');
 
 if (isset($_GET['dl']) && $_GET['dl'] === '1') {
     if (!$isLoggedIn) {
