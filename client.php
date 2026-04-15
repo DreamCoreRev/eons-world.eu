@@ -11,10 +11,10 @@ $isLoggedIn = !empty($_SESSION['logged_in']) && !empty($_SESSION['account_id']);
 // Redirection vers l'URL publique du fichier (plus fiable qu'un readfile)
 define('CLIENT_FILE_URL',  '/uploads/client/Eons.rar');
 define('CLIENT_FILE_NAME', 'Eons.rar');
-define('CLIENT_FILE_SIZE_DISPLAY', '~18.8 Go');
+define('CLIENT_FILE_SIZE_DISPLAY', '~19.1 Go');
 
-define('LAUNCHER_FILE_URL',  'https://eons-world.eu/uploads/launcher/LauncherEons.rar');
-define('LAUNCHER_FILE_NAME', 'LauncherEons.rar');
+define('LAUNCHER_FILE_URL',  'https://eons-world.eu/uploads/launcher/LauncherEonsWorld.rar');
+define('LAUNCHER_FILE_NAME', 'LauncherEonsWorld.rar');
 
 if (isset($_GET['dl']) && $_GET['dl'] === '1') {
     if (!$isLoggedIn) {
