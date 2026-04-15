@@ -69,6 +69,41 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
 
         html { scroll-behavior: smooth; }
 
+        /* ─── SCROLLBAR CUSTOM EONS ─────────────────────────────────── */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--deep-void);
+            border-left: 1px solid rgba(136,144,255,0.06);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(
+                180deg,
+                rgba(136,144,255,0.55) 0%,
+                rgba(90,48,212,0.75)   50%,
+                rgba(240,192,96,0.55)  100%
+            );
+            border-radius: 4px;
+            border: 1px solid rgba(136,144,255,0.15);
+            box-shadow: 0 0 8px rgba(136,144,255,0.25);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(
+                180deg,
+                rgba(136,144,255,0.9)  0%,
+                rgba(90,48,212,1)      50%,
+                rgba(240,192,96,0.85)  100%
+            );
+            box-shadow: 0 0 14px rgba(136,144,255,0.5), 0 0 6px rgba(240,192,96,0.3);
+        }
+        ::-webkit-scrollbar-corner {
+            background: var(--deep-void);
+        }
+        /* Firefox */
+        * { scrollbar-width: thin; scrollbar-color: rgba(90,48,212,0.7) var(--deep-void); }
+
         body {
             font-family: 'Crimson Pro', Georgia, serif;
             background-color: var(--midnight);
