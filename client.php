@@ -13,8 +13,8 @@ define('CLIENT_FILE_URL',  '/uploads/client/Eons.rar');
 define('CLIENT_FILE_NAME', 'Eons.rar');
 define('CLIENT_FILE_SIZE_DISPLAY', '~19.1 Go');
 
-define('LAUNCHER_FILE_URL',  'https://eons-world.eu/uploads/launcher/LauncherEonsWorld.rar');
-define('LAUNCHER_FILE_NAME', 'LauncherEonsWorld.rar');
+define('LAUNCHER_FILE_URL',  'https://eons-world.eu/uploads/launcher/_LauncherEonsWorld.rar');
+define('LAUNCHER_FILE_NAME', '_LauncherEonsWorld.rar');
 
 if (isset($_GET['dl']) && $_GET['dl'] === '1') {
     if (!$isLoggedIn) {
@@ -500,7 +500,7 @@ require_once __DIR__ . '/header.php';
                         <polyline points="7 10 12 15 17 10"/>
                         <line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
-                    Télécharger Eons.rar
+                    Télécharger le Client
                 </a>
                 <span class="client-cta-note">
                     Connecté en tant que <strong style="color:var(--arcane-bright);font-style:normal;">
