@@ -685,12 +685,11 @@ require_once __DIR__ . '/header.php';
     <p class="footer-logo">Eons</p>
     <p class="footer-tagline">World of Warcraft 3.3.5a — Powered by TrinityCore</p>
     <div class="footer-links">
-        <a href="#">Accueil</a>
-        <a href="#">Règlement</a>
-        <a href="#">Classements</a>
-        <a href="#">Support</a>
-        <a href="#">Discord</a>
-        <a href="#">À propos</a>
+        <a href="index.php">Accueil</a>
+		<a href="actualites.php">Actualités</a>
+		<a href="royaumes.php">Royaumes</a>
+        <a href="classements.php">Classements</a>
+        <a href="https://discord.com/invite/KrQsUdUz8W">Discord</a>
     </div>
     <div class="footer-sep"><div class="footer-gem"></div></div>
     <p class="footer-bottom">

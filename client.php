@@ -655,11 +655,10 @@ require_once __DIR__ . '/header.php';
     <p class="footer-tagline">Forgé dans les étoiles. Joué par des légendes.</p>
     <div class="footer-links">
         <a href="index.php">Accueil</a>
-        <a href="royaumes.php">Royaumes</a>
-        <a href="boutique.php">Boutique</a>
-        <a href="vote.php">Voter</a>
-        <a href="client.php">Télécharger</a>
+		<a href="actualites.php">Actualités</a>
+		<a href="royaumes.php">Royaumes</a>
         <a href="classements.php">Classements</a>
+        <a href="https://discord.com/invite/KrQsUdUz8W">Discord</a>
     </div>
     <div class="footer-sep"><div class="footer-gem"></div></div>
     <p class="footer-bottom">© <?= date('Y') ?> <span>Eons</span> · World of Warcraft 3.3.5a · Tous droits réservés</p>
