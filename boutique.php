@@ -195,218 +195,45 @@ $accountId  = $isLoggedIn ? (int)$_SESSION['account_id'] : 0;
 //   quantity     → quantité à envoyer (défaut 1)
 //   soap_cmd     → commande GM pour les services (%char% = personnage cible) ; null = envoi d'item normal
 // Champs optionnels : badge, badge_color, ribbon
-$catalog = [
-    // ── MONTURES ─────────────────────────────────────────────
-    [
-        'id'           => 'ability_mount_spectraltiger',
-        'name'         => 'Rênes de tigre spectral',
-        'desc'         => 'Invoque et renvoie un tigre spectral.',
-        'icon'         => '🐯',
-        'price'        => 800,
-        'currency'     => 'dp',
-        'category'     => 'montures',
-        'game_item_id' => 33224,   // https://www.wowhead.com/fr/item=33224/renes-de-tigre-spectral
-        'quantity'     => 1,
-        'soap_cmd'     => null,
-        'badge'        => 'Légendaire',
-        'badge_color'  => '#f0c060',
-        'ribbon'       => 'Populaire',
-    ],
-	[
-        'id'           => 'ability_mount_spectraltiger',
-        'name'         => 'Rênes de tigre spectral',
-        'desc'         => 'Invoque et renvoie un tigre spectral.',
-        'icon'         => '🐯',
-        'price'        => 1800,
-        'currency'     => 'vp',
-        'category'     => 'montures',
-        'game_item_id' => 33224,   // https://www.wowhead.com/fr/item=33224/renes-de-tigre-spectral
-        'quantity'     => 1,
-        'soap_cmd'     => null,
-        'badge'        => 'Légendaire',
-        'badge_color'  => '#f0c060',
-        'ribbon'       => 'Populaire',
-    ],
-    [
-        'id'           => 'ability_mount_nightmarehorse',
-        'name'         => 'Cheval de guerre noir de croisé',
-        'desc'         => 'Invoque et renvoie un cheval de guerre noir de croisé.',
-        'icon'         => '🐎',
-        'price'        => 1200,
-        'currency'     => 'vp',
-        'category'     => 'montures',
-        'game_item_id' => 49098,   // Remplacer par l'ID item souhaité sur votre serveur
-        'quantity'     => 1,
-        'soap_cmd'     => null,
-        'badge'        => 'Épique',
-        'badge_color'  => '#a070ff',
-    ],
-    [
-        'id'           => 'ability_mount_drake_proto',
-        'name'         => 'Rênes de proto-drake bleu',
-        'desc'         => 'Invoque et renvoie un proto-drake bleu.',
-        'icon'         => '🐉',
-        'price'        => 650,
-        'currency'     => 'dp',
-        'category'     => 'montures',
-        'game_item_id' => 44151,   // Remplacer par l'ID item souhaité sur votre serveur
-        'quantity'     => 1,
-        'soap_cmd'     => null,
-        'badge'        => 'Rare',
-        'badge_color'  => '#69ccf0',
-    ],
+function loadCatalog(): array
+{
+    try {
+        $db   = getAuthDB();                        // PDO déjà dispo via config.php
+        $stmt = $db->query(
+            "SELECT * FROM `shop_catalog`
+              WHERE `active` = 1
+              ORDER BY `category`, `sort_order`, `price`"
+        );
+        $rows = $stmt->fetchAll();
 
-    // ── PETS ─────────────────────────────────────────────────
-    [
-        'id'           => 'ability_hunter_pet_dragonhawk',
-        'name'         => 'Jeune faucon-dragon bleu',
-        'desc'         => 'Vous apprend à invoquer votre jeune faucon-dragon.',
-        'icon'         => '🐉',
-        'price'        => 250,
-        'currency'     => 'vp',
-        'category'     => 'pets',
-        'game_item_id' => 29958,   // Bébé phénix
-        'quantity'     => 1,
-        'soap_cmd'     => null,
-        'badge'        => 'Rare',
-        'badge_color'  => '#69ccf0',
-        'ribbon'       => 'Nouveau',
-    ],
-    [
-        'id'           => 'inv_egg_02',
-        'name'         => 'Oeuf de poule',
-        'desc'         => 'Vous apprend à invoquer votre poulet.',
-        'icon'         => '🥚',
-        'price'        => 180,
-        'currency'     => 'dp',
-        'category'     => 'pets',
-        'game_item_id' => 11110,   // Remplacer si besoin
-        'quantity'     => 1,
-        'soap_cmd'     => null,
-        'badge'        => 'Commun',
-        'badge_color'  => '#a8b4d0',
-    ],
-    [
-        'id'           => 'inv_misc_bandage_16',
-        'name'         => 'Laisse de familier en ruban rouge',
-        'desc'         => 'Une laisse pour familier faite d\'un ruban rouge.',
-        'icon'         => '🐶',
-        'price'        => 320,
-        'currency'     => 'dp',
-        'category'     => 'pets',
-        'game_item_id' => 44820,   // Remplacer par l'ID custom de votre serveur si applicable
-        'quantity'     => 1,
-        'soap_cmd'     => null,
-        'badge'        => 'Épique',
-        'badge_color'  => '#a070ff',
-    ],
+        // Normalise vers le même format qu'avant pour ne rien casser
+        return array_map(static function (array $r): array {
+            return [
+                'id'           => $r['id'],
+                'name'         => $r['name'],
+                'desc'         => $r['description'],   // clé 'desc' comme dans l'original
+                'icon'         => $r['icon'],
+                'price'        => (int) $r['price'],
+                'currency'     => $r['currency'],
+                'category'     => $r['category'],
+                'game_item_id' => (int) $r['game_item_id'],
+                'quantity'     => (int) $r['quantity'],
+                'soap_cmd'     => $r['soap_cmd'],
+                'badge'        => $r['badge']       ?: null,
+                'badge_color'  => $r['badge_color'] ?: null,
+                'ribbon'       => $r['ribbon']      ?: null,
+            ];
+        }, $rows);
 
-    // ── ÉQUIPEMENTS ───────────────────────────────────────────
-    [
-        'id'           => 'inv_staff_13',
-        'name'         => 'Grand bâton de Jordan',
-        'desc'         => 'Expérience gagnée en tuant des monstres et en accomplissant des quêtes augmentée de 10%.',
-        'icon'         => '🧙‍',
-        'price'        => 80,
-        'currency'     => 'vp',
-        'category'     => 'equipement',
-        'game_item_id' => 44095, 
-        'quantity'     => 1,
-        'soap_cmd'     => null,
-        'badge'        => 'Héritage',
-        'badge_color'  => '#f0c060',
-    ],
-    [
-        'id'           => 'inv_chest_cloth_49',
-        'name'         => 'Robe de Brume-funeste rapiécée',
-        'desc'         => 'Expérience gagnée en tuant des monstres et en accomplissant des quêtes augmentée de 10%.',
-        'icon'         => '🥻',
-        'price'        => 320,
-        'currency'     => 'vp',
-        'category'     => 'equipement',
-        'game_item_id' => 48691,   // Remplacer par l'ID voulu
-        'quantity'     => 1,
-        'soap_cmd'     => null,
-        'badge'        => 'Héritage',
-        'badge_color'  => '#a070ff',
-        'ribbon'       => 'Solde',
-    ],
-    [
-        'id'           => 'inv_sword_17',
-        'name'         => 'Crève-cœur équilibré',
-        'desc'         => 'Expérience gagnée en tuant des monstres et en accomplissant des quêtes augmentée de 10%.',
-        'icon'         => '🗡️',
-        'price'        => 90,
-        'currency'     => 'vp',
-        'category'     => 'equipement',
-        'game_item_id' => 42944,   // Remplacer par l'ID voulu
-        'quantity'     => 1,
-        'soap_cmd'     => null,
-        'badge'        => 'Héritage',
-        'badge_color'  => '#69ccf0',
-    ],
+    } catch (\PDOException $e) {
+        error_log('[Boutique] Chargement catalogue : ' . $e->getMessage());
+        return [];   // Boutique vide plutôt qu'une erreur fatale
+    }
+}
 
-    // ── SERVICES (game_item_id=0, soap_cmd=commande GM) ───────
-    // %char% est remplacé automatiquement par le nom du personnage cible
-    [
-        'id'           => 'service_name_change',
-        'name'         => 'Changement de Nom',
-        'desc'         => 'Offrez une nouvelle identité à votre héros. Le changement prend effet lors de la prochaine connexion au jeu.',
-        'icon'         => '✒️',
-        'price'        => 150,
-        'currency'     => 'vp',
-        'category'     => 'services',
-        'game_item_id' => 0,
-        'quantity'     => 1,
-        'soap_cmd'     => '.character rename %char%',
-        'badge'        => 'Service',
-        'badge_color'  => '#8890ff',
-    ],
-    [
-        'id'           => 'service_race_change',
-        'name'         => 'Changement de Race',
-        'desc'         => 'Réincarnez votre personnage dans une autre race. Votre histoire, vos équipements et votre niveau sont préservés.',
-        'icon'         => '🧬',
-        'price'        => 250,
-        'currency'     => 'dp',
-        'category'     => 'services',
-        'game_item_id' => 0,
-        'quantity'     => 1,
-        'soap_cmd'     => '.character changerace %char%',
-        'badge'        => 'Service',
-        'badge_color'  => '#8890ff',
-    ],
-	[
-        'id'           => 'service_faction_change',
-        'name'         => 'Changement de Faction',
-        'desc'         => 'Changer votre Faction.',
-        'icon'         => '🧬',
-        'price'        => 250,
-        'currency'     => 'dp',
-        'category'     => 'services',
-        'game_item_id' => 0,
-        'quantity'     => 1,
-        'soap_cmd'     => '.character changefaction %char%',
-        'badge'        => 'Service',
-        'badge_color'  => '#8890ff',
-    ],
-    [
-        'id'           => 'service_boost_80',
-        'name'         => 'Boost Niveau 80',
-        'desc'         => 'Votre héros atteint instantanément le niveau maximum. Équipement de départ Naxxramas fourni. Prêt pour les raids.',
-        'icon'         => '⚡',
-        'price'        => 1000,
-        'currency'     => 'dp',
-        'category'     => 'services',
-        'game_item_id' => 0,
-        'quantity'     => 1,
-        'soap_cmd'     => '.character level %char% 80',
-        'badge'        => 'Légendaire',
-        'badge_color'  => '#f0c060',
-        'ribbon'       => 'Populaire',
-    ],
-];
+$catalog = loadCatalog();
 
+// ── Catégories (inchangées) ───────────────────────────────────
 $categories = [
     'tous'       => ['label' => 'Tout voir',    'icon' => '✦'],
     'montures'   => ['label' => 'Montures',     'icon' => '🐉'],
