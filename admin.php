@@ -312,9 +312,10 @@ body::before {
     background:rgba(6,8,26,0.97);
     border-right:1px solid rgba(136,144,255,0.12);
     backdrop-filter:blur(24px);
+    -webkit-backdrop-filter:blur(24px);
     display:flex;
     flex-direction:column;
-    z-index:200;
+    z-index:310;
     overflow-y:auto;
 }
 .sb-brand {
@@ -818,12 +819,68 @@ body::before {
 .t-email { font-size:0.78rem; color:var(--arcane-bright); opacity:0.75; font-family:monospace; }
 .t-date  { font-size:0.75rem; color:var(--silver); opacity:0.55; }
 
+/* ─── HAMBURGER BUTTON ───────────────────────────────────────── */
+.mob-toggle {
+    display:none;
+    position:fixed;
+    top:12px; left:10px;
+    z-index:400;
+    width:32px; height:32px;
+    background:rgba(6,8,26,0.95);
+    border:1px solid rgba(136,144,255,0.25);
+    border-radius:7px;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    cursor:pointer;
+    backdrop-filter:blur(12px);
+    box-shadow:0 4px 20px rgba(0,0,0,0.5);
+    transition:border-color 0.2s, box-shadow 0.2s;
+}
+.mob-toggle:hover { border-color:rgba(136,144,255,0.5); box-shadow:0 4px 20px rgba(90,48,212,0.35); }
+.mob-toggle span {
+    display:block;
+    width:14px; height:1.5px;
+    background:var(--arcane-bright);
+    border-radius:2px;
+    transition:transform 0.28s ease, opacity 0.28s ease;
+    transform-origin:center;
+}
+.mob-toggle.is-open span:nth-child(1) { transform:translateY(5.5px) rotate(45deg); background:var(--gold-bright); }
+.mob-toggle.is-open span:nth-child(2) { opacity:0; }
+.mob-toggle.is-open span:nth-child(3) { transform:translateY(-5.5px) rotate(-45deg); background:var(--gold-bright); }
+
+/* ─── SIDEBAR OVERLAY (mobile) ───────────────────────────────── */
+.sb-overlay {
+    display:none;
+    position:fixed; top:0; right:0; bottom:0; left:240px;
+    z-index:290;
+    background:rgba(2,3,12,0.60);
+    opacity:0;
+    transition:opacity 0.3s;
+    pointer-events:none;
+}
+.sb-overlay.visible { opacity:1; pointer-events:auto; }
+
 /* ─── RESPONSIVE ─────────────────────────────────────────────── */
 @media(max-width:1200px) { .stats { grid-template-columns:repeat(3,1fr); } }
 @media(max-width:900px) {
     :root { --sw:0px; }
-    .sidebar { transform:translateX(-100%); width:240px; }
+    .mob-toggle { display:flex; }
+    .sidebar {
+        transform:translateX(-100%);
+        width:240px;
+        transition:transform 0.3s cubic-bezier(.4,0,.2,1), box-shadow 0.3s;
+    }
+    .sidebar.is-open {
+        transform:translateX(0);
+        box-shadow:6px 0 40px rgba(0,0,0,0.7);
+    }
+    .sb-overlay { display:block; }
     .main { margin-left:0; padding:1.4rem 1.2rem 4rem; }
+    .topbar { padding-left:2.8rem; } /* espace pour le bouton hamburger */
+    .sb-brand { padding-left:3rem; } /* évite le chevauchement avec la croix */
 }
 @media(max-width:700px)  { .stats { grid-template-columns:repeat(2,1fr); } }
 @media(max-width:640px) {
@@ -836,6 +893,12 @@ body::before {
 </head>
 <body>
 <canvas id="starfield"></canvas>
+
+<!-- ═══ HAMBURGER MOBILE ══════════════════════════════════════ -->
+<button class="mob-toggle" id="mobToggle" aria-label="Ouvrir le menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+</button>
+<div class="sb-overlay" id="sbOverlay"></div>
 
 <div class="shell">
 
@@ -1413,6 +1476,54 @@ function closeOverlay(id) {
 document.addEventListener('keydown', e => {
     if (e.key==='Escape') { closeItemModal(); closeDelModal(); }
 });
+
+// ─── HAMBURGER SIDEBAR ───────────────────────────────────────
+(function(){
+    const toggle  = document.getElementById('mobToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sbOverlay');
+    if (!toggle || !sidebar || !overlay) return;
+
+    function openSidebar() {
+        overlay.style.display = 'block';
+        // forcer reflow pour que la transition opacity s'active
+        overlay.offsetHeight;
+        sidebar.classList.add('is-open');
+        overlay.classList.add('visible');
+        toggle.classList.add('is-open');
+        toggle.setAttribute('aria-expanded','true');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+        sidebar.classList.remove('is-open');
+        overlay.classList.remove('visible');
+        toggle.classList.remove('is-open');
+        toggle.setAttribute('aria-expanded','false');
+        document.body.style.overflow = '';
+        // cacher l'overlay après la transition
+        overlay.addEventListener('transitionend', function hide(){
+            if (!overlay.classList.contains('visible')) overlay.style.display = 'none';
+            overlay.removeEventListener('transitionend', hide);
+        });
+    }
+
+    toggle.addEventListener('click', function(){
+        sidebar.classList.contains('is-open') ? closeSidebar() : openSidebar();
+    });
+    overlay.addEventListener('click', closeSidebar);
+
+    // Fermer si on clique un lien de la sidebar (navigation)
+    sidebar.querySelectorAll('a').forEach(function(a){
+        a.addEventListener('click', function(){
+            if (window.innerWidth <= 900) closeSidebar();
+        });
+    });
+
+    // Fermer si resize vers desktop
+    window.addEventListener('resize', function(){
+        if (window.innerWidth > 900) closeSidebar();
+    });
+})();
 
 // ─── STARFIELD ────────────────────────────────────────────────
 (function(){
