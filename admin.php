@@ -179,6 +179,207 @@ try {
 // ── Section active (définie ICI, avant tout usage) ───────────
 $section = $_GET['section'] ?? 'catalogue';
 
+// ── Connexion eons_world (boutique TrinityCore) ───────────────
+function getWorldDB(): PDO {
+    static $pdo = null;
+    if ($pdo === null) {
+        $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=eons_world;charset=utf8mb4';
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ]);
+    }
+    return $pdo;
+}
+
+// ── Chargement boutique TC ────────────────────────────────────
+$storeCategories = [];
+$storeServices   = [];
+$storeCurrencies = [];
+$storeLinks      = [];
+$storeLogs       = [];
+
+if (in_array($section, ['store_categories','store_services','store_currencies','store_logs','store'])) {
+    try {
+        $wdb = getWorldDB();
+        $storeCategories = $wdb->query("SELECT * FROM store_categories ORDER BY id")->fetchAll();
+        $storeCurrencies = $wdb->query("SELECT * FROM store_currencies ORDER BY id")->fetchAll();
+        if ($section === 'store_services' || $section === 'store') {
+            $storeServices = $wdb->query("SELECT * FROM store_services ORDER BY id")->fetchAll();
+            $storeLinks    = $wdb->query("SELECT * FROM store_category_service_link ORDER BY category,service")->fetchAll();
+        }
+        if ($section === 'store_logs') {
+            $storeLogs = $wdb->query(
+                "SELECT sl.*, sa.username, sc.name AS currency_name, ss.name AS service_name
+                 FROM store_logs sl
+                 LEFT JOIN eons_auth.account sa ON sa.id = sl.account
+                 LEFT JOIN store_currencies sc ON sc.id = sl.currencyId
+                 LEFT JOIN store_services ss ON ss.id = sl.serviceId
+                 ORDER BY sl.time DESC LIMIT 300"
+            )->fetchAll();
+        }
+    } catch (PDOException $e) {
+        $storeCategories = $storeServices = $storeCurrencies = $storeLinks = $storeLogs = [];
+    }
+}
+
+// ── Actions POST boutique TC ──────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_action'])) {
+    if (!hash_equals($_SESSION['csrf_admin'] ?? '', $_POST['csrf_token'] ?? '')) {
+        $_SESSION['flash_admin']      = '⚠ Token CSRF invalide.';
+        $_SESSION['flash_admin_type'] = 'error';
+    } else {
+        $sa = $_POST['store_action'];
+        try {
+            $wdb = getWorldDB();
+
+            /* ── CATÉGORIES ── */
+            if ($sa === 'cat_add') {
+                $wdb->prepare("INSERT INTO store_categories (name,icon,requiredRank,flags,enabled) VALUES (?,?,?,?,?)")
+                    ->execute([
+                        mb_substr(trim($_POST['cat_name']??''),0,255),
+                        mb_substr(trim($_POST['cat_icon']??''),0,255),
+                        (int)($_POST['cat_rank']??0),
+                        (int)($_POST['cat_flags']??0),
+                        isset($_POST['cat_enabled'])?1:0,
+                    ]);
+                $_SESSION['flash_admin'] = '✦ Catégorie ajoutée.';
+                $_SESSION['flash_admin_type'] = 'success';
+            } elseif ($sa === 'cat_edit') {
+                $wdb->prepare("UPDATE store_categories SET name=?,icon=?,requiredRank=?,flags=?,enabled=? WHERE id=?")
+                    ->execute([
+                        mb_substr(trim($_POST['cat_name']??''),0,255),
+                        mb_substr(trim($_POST['cat_icon']??''),0,255),
+                        (int)($_POST['cat_rank']??0),
+                        (int)($_POST['cat_flags']??0),
+                        isset($_POST['cat_enabled'])?1:0,
+                        (int)($_POST['cat_id']??0),
+                    ]);
+                $_SESSION['flash_admin'] = '✦ Catégorie mise à jour.';
+                $_SESSION['flash_admin_type'] = 'success';
+            } elseif ($sa === 'cat_toggle') {
+                $wdb->prepare("UPDATE store_categories SET enabled=1-enabled WHERE id=?")->execute([(int)($_POST['cat_id']??0)]);
+                $_SESSION['flash_admin'] = '✦ Visibilité catégorie modifiée.';
+                $_SESSION['flash_admin_type'] = 'success';
+            } elseif ($sa === 'cat_delete') {
+                $cid = (int)($_POST['cat_id']??0);
+                $wdb->prepare("DELETE FROM store_category_service_link WHERE category=?")->execute([$cid]);
+                $wdb->prepare("DELETE FROM store_categories WHERE id=?")->execute([$cid]);
+                $_SESSION['flash_admin'] = '🗑 Catégorie supprimée.';
+                $_SESSION['flash_admin_type'] = 'info';
+            }
+
+            /* ── SERVICES ── */
+            elseif ($sa === 'svc_add' || $sa === 'svc_edit') {
+                $rewards = [];
+                $rcounts = [];
+                for ($ri=1;$ri<=8;$ri++) {
+                    $rewards[$ri] = (int)($_POST["reward_$ri"]??0) ?: null;
+                    $rcounts[$ri] = (int)($_POST["rewardcount_$ri"]??0) ?: null;
+                }
+                $params = [
+                    mb_substr(trim($_POST['svc_type_val']??''),0,10),
+                    mb_substr(trim($_POST['svc_name']??''),0,500),
+                    mb_substr(trim($_POST['svc_tooltip_name']??''),0,500),
+                    mb_substr(trim($_POST['svc_tooltip_type']??''),0,255),
+                    mb_substr(trim($_POST['svc_tooltip_text']??''),0,2000),
+                    mb_substr(trim($_POST['svc_icon']??''),0,255),
+                    (int)($_POST['svc_price']??0),
+                    (int)($_POST['svc_currency']??2),
+                    (int)($_POST['svc_hyperlink']??0) ?: null,
+                    (int)($_POST['svc_creature']??0) ?: null,
+                    (int)($_POST['svc_discount']??0) ?: null,
+                    (int)($_POST['svc_flags']??0) ?: null,
+                    $rewards[1],$rewards[2],$rewards[3],$rewards[4],
+                    $rewards[5],$rewards[6],$rewards[7],$rewards[8],
+                    $rcounts[1],$rcounts[2],$rcounts[3],$rcounts[4],
+                    $rcounts[5],$rcounts[6],$rcounts[7],$rcounts[8],
+                    isset($_POST['svc_new'])?1:0,
+                    isset($_POST['svc_enabled'])?1:0,
+                ];
+                if ($sa === 'svc_add') {
+                    $wdb->prepare("INSERT INTO store_services
+                        (type,name,tooltipName,tooltipType,tooltipText,icon,price,currency,hyperlinkId,creatureEntry,discountAmount,flags,
+                         reward_1,reward_2,reward_3,reward_4,reward_5,reward_6,reward_7,reward_8,
+                         rewardcount_1,rewardcount_2,rewardcount_3,rewardcount_4,rewardcount_5,rewardcount_6,rewardcount_7,rewardcount_8,
+                         `new`,enabled)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+                        ->execute($params);
+                    $newId = (int)$wdb->lastInsertId();
+                    // liens catégories
+                    $cats = array_map('intval', (array)($_POST['svc_cats']??[]));
+                    foreach ($cats as $cid) {
+                        if ($cid>0) {
+                            try { $wdb->prepare("INSERT IGNORE INTO store_category_service_link (category,service) VALUES (?,?)")->execute([$cid,$newId]); } catch(\Exception $e){}
+                        }
+                    }
+                    $_SESSION['flash_admin'] = '✦ Service ajouté (ID '.$newId.').';
+                    $_SESSION['flash_admin_type'] = 'success';
+                } else {
+                    $sid = (int)($_POST['svc_id']??0);
+                    $params[] = $sid;
+                    $wdb->prepare("UPDATE store_services SET
+                        type=?,name=?,tooltipName=?,tooltipType=?,tooltipText=?,icon=?,price=?,currency=?,hyperlinkId=?,creatureEntry=?,discountAmount=?,flags=?,
+                        reward_1=?,reward_2=?,reward_3=?,reward_4=?,reward_5=?,reward_6=?,reward_7=?,reward_8=?,
+                        rewardcount_1=?,rewardcount_2=?,rewardcount_3=?,rewardcount_4=?,rewardcount_5=?,rewardcount_6=?,rewardcount_7=?,rewardcount_8=?,
+                        `new`=?,enabled=? WHERE id=?")
+                        ->execute($params);
+                    // mettre à jour les liens
+                    $wdb->prepare("DELETE FROM store_category_service_link WHERE service=?")->execute([$sid]);
+                    $cats = array_map('intval', (array)($_POST['svc_cats']??[]));
+                    foreach ($cats as $cid) {
+                        if ($cid>0) {
+                            try { $wdb->prepare("INSERT IGNORE INTO store_category_service_link (category,service) VALUES (?,?)")->execute([$cid,$sid]); } catch(\Exception $e){}
+                        }
+                    }
+                    $_SESSION['flash_admin'] = '✦ Service mis à jour.';
+                    $_SESSION['flash_admin_type'] = 'success';
+                }
+            } elseif ($sa === 'svc_toggle') {
+                $wdb->prepare("UPDATE store_services SET enabled=1-enabled WHERE id=?")->execute([(int)($_POST['svc_id']??0)]);
+                $_SESSION['flash_admin'] = '✦ Visibilité service modifiée.';
+                $_SESSION['flash_admin_type'] = 'success';
+            } elseif ($sa === 'svc_delete') {
+                $sid = (int)($_POST['svc_id']??0);
+                $wdb->prepare("DELETE FROM store_category_service_link WHERE service=?")->execute([$sid]);
+                $wdb->prepare("DELETE FROM store_services WHERE id=?")->execute([$sid]);
+                $_SESSION['flash_admin'] = '🗑 Service supprimé.';
+                $_SESSION['flash_admin_type'] = 'info';
+            }
+
+            /* ── DEVISES ── */
+            elseif ($sa === 'cur_add') {
+                $wdb->prepare("INSERT INTO store_currencies (type,name,icon,data,tooltip) VALUES (?,?,?,?,?)")
+                    ->execute([(int)($_POST['cur_type']??1),trim($_POST['cur_name']??''),trim($_POST['cur_icon']??''),(int)($_POST['cur_data']??0),trim($_POST['cur_tooltip']??'')]);
+                $_SESSION['flash_admin'] = '✦ Devise ajoutée.'; $_SESSION['flash_admin_type']='success';
+            } elseif ($sa === 'cur_edit') {
+                $wdb->prepare("UPDATE store_currencies SET type=?,name=?,icon=?,data=?,tooltip=? WHERE id=?")
+                    ->execute([(int)($_POST['cur_type']??1),trim($_POST['cur_name']??''),trim($_POST['cur_icon']??''),(int)($_POST['cur_data']??0),trim($_POST['cur_tooltip']??''),(int)($_POST['cur_id']??0)]);
+                $_SESSION['flash_admin'] = '✦ Devise mise à jour.'; $_SESSION['flash_admin_type']='success';
+            } elseif ($sa === 'cur_delete') {
+                $wdb->prepare("DELETE FROM store_currencies WHERE id=?")->execute([(int)($_POST['cur_id']??0)]);
+                $_SESSION['flash_admin'] = '🗑 Devise supprimée.'; $_SESSION['flash_admin_type']='info';
+            }
+
+        } catch (PDOException $e) {
+            $_SESSION['flash_admin']      = '⚠ Erreur DB : ' . htmlspecialchars($e->getMessage());
+            $_SESSION['flash_admin_type'] = 'error';
+        }
+        if (strpos($sa, 'cat_') === 0) {
+			$redir = 'store_categories';
+		} elseif (strpos($sa, 'svc_') === 0) {
+			$redir = 'store_services';
+		} elseif (strpos($sa, 'cur_') === 0) {
+			$redir = 'store_currencies';
+		} else {
+			$redir = 'store_categories';
+		}
+        header('Location: admin.php?section='.$redir);
+        exit;
+    }
+}
+
 // ── Logs achats ───────────────────────────────────────────────
 $shopLogs = [];
 if ($section === 'logs') {
@@ -912,7 +1113,7 @@ body::before {
     <div class="sb-user"><span><?= $adminName ?></span></div>
 
     <nav class="sb-nav">
-        <div class="sb-section">Boutique</div>
+        <div class="sb-section">Boutique (CMS)</div>
         <a href="admin.php" class="sb-link <?= ($section==='catalogue')?'active':'' ?>">
             <i>🛒</i> Catalogue
             <span class="sb-count"><?= $totalItems ?></span>
@@ -922,6 +1123,19 @@ body::before {
         </a>
         <a href="admin.php?section=queue" class="sb-link <?= ($section==='queue')?'active':'' ?>">
             <i>⏳</i> File d'attente
+        </a>
+        <div class="sb-section">Boutique (TrinityCore)</div>
+        <a href="admin.php?section=store_categories" class="sb-link <?= ($section==='store_categories')?'active':'' ?>">
+            <i>🏷</i> Catégories
+        </a>
+        <a href="admin.php?section=store_services" class="sb-link <?= ($section==='store_services')?'active':'' ?>">
+            <i>📦</i> Services
+        </a>
+        <a href="admin.php?section=store_currencies" class="sb-link <?= ($section==='store_currencies')?'active':'' ?>">
+            <i>💰</i> Devises
+        </a>
+        <a href="admin.php?section=store_logs" class="sb-link <?= ($section==='store_logs')?'active':'' ?>">
+            <i>📋</i> Logs TC
         </a>
         <div class="sb-section">Joueurs</div>
         <a href="admin.php?section=accounts" class="sb-link <?= ($section==='accounts')?'active':'' ?>">
@@ -950,10 +1164,24 @@ body::before {
             <div class="page-title">File d'attente</div>
             <?php elseif ($section === 'accounts'): ?>
             <div class="page-title">Gestion des Comptes</div>
+            <?php elseif ($section === 'store_categories'): ?>
+            <div class="page-title">Catégories TC</div>
+            <?php elseif ($section === 'store_services'): ?>
+            <div class="page-title">Services TC</div>
+            <?php elseif ($section === 'store_currencies'): ?>
+            <div class="page-title">Devises TC</div>
+            <?php elseif ($section === 'store_logs'): ?>
+            <div class="page-title">Logs Boutique TC</div>
             <?php endif; ?>
         </div>
         <?php if ($section === 'catalogue'): ?>
         <button class="btn-add" onclick="openAddModal()">✦ Nouvel article</button>
+        <?php elseif ($section === 'store_categories'): ?>
+        <button class="btn-add" onclick="openCatModal()">✦ Nouvelle catégorie</button>
+        <?php elseif ($section === 'store_services'): ?>
+        <button class="btn-add" onclick="openSvcModal()">✦ Nouveau service</button>
+        <?php elseif ($section === 'store_currencies'): ?>
+        <button class="btn-add" onclick="openCurModal()">✦ Nouvelle devise</button>
         <?php endif; ?>
     </div>
 
@@ -1270,6 +1498,195 @@ body::before {
         </div>
     </div>
 
+    <?php elseif ($section === 'store_categories'): ?>
+    <!-- ═══ CATÉGORIES TC ════════════════════════════════════════ -->
+    <?php
+    $catMap = [];
+    foreach ($storeCategories as $sc) $catMap[$sc['id']] = $sc;
+    ?>
+    <div class="panel">
+        <div class="panel-head">
+            <div class="panel-title">🏷 Catégories (store_categories)</div>
+        </div>
+        <div class="panel-body">
+            <div class="tbl-scroll">
+            <table class="tbl">
+                <thead><tr>
+                    <th>ID</th><th>Nom</th><th>Icône</th><th>Rang requis</th><th>Flags</th><th>Statut</th><th>Actions</th>
+                </tr></thead>
+                <tbody>
+                <?php if (empty($storeCategories)): ?>
+                <tr><td colspan="7" class="empty">Aucune catégorie.</td></tr>
+                <?php else: foreach ($storeCategories as $cat): ?>
+                <tr>
+                    <td style="font-size:0.75rem;opacity:0.5;"><?= (int)$cat['id'] ?></td>
+                    <td><div class="t-name"><?= htmlspecialchars($cat['name']) ?></div></td>
+                    <td style="font-size:0.75rem;font-family:monospace;color:var(--arcane-bright);"><?= htmlspecialchars($cat['icon']??'') ?></td>
+                    <td style="font-size:0.78rem;text-align:center;"><?= (int)$cat['requiredRank'] ?></td>
+                    <td style="font-size:0.78rem;text-align:center;"><?= (int)$cat['flags'] ?></td>
+                    <td><span class="bdg <?= $cat['enabled']?'bdg-on':'bdg-off' ?>"><?= $cat['enabled']?'Activée':'Masquée' ?></span></td>
+                    <td>
+                        <div class="acts">
+                            <button class="btn btn-edit" onclick='openCatModal(<?= htmlspecialchars(json_encode($cat),ENT_QUOTES) ?>)'>✎ Éditer</button>
+                            <form method="POST" style="display:inline">
+                                <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+                                <input type="hidden" name="store_action" value="cat_toggle">
+                                <input type="hidden" name="cat_id" value="<?= (int)$cat['id'] ?>">
+                                <button type="submit" class="btn btn-tgl"><?= $cat['enabled']?'⊘ Masquer':'✦ Activer' ?></button>
+                            </form>
+                            <button class="btn btn-del" onclick="confirmStoreDelete('cat','<?= (int)$cat['id'] ?>','<?= htmlspecialchars(addslashes($cat['name'])) ?>')">🗑 Suppr.</button>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; endif; ?>
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+
+    <?php elseif ($section === 'store_services'): ?>
+    <!-- ═══ SERVICES TC ═══════════════════════════════════════════ -->
+    <?php
+    $catMap2 = [];
+    foreach ($storeCategories as $sc2) $catMap2[$sc2['id']] = $sc2;
+    $svcCatIndex = [];
+    foreach ($storeLinks as $lk) $svcCatIndex[$lk['service']][] = $lk['category'];
+    $curMap = [];
+    foreach ($storeCurrencies as $cur) $curMap[$cur['id']] = $cur;
+    ?>
+    <div class="panel">
+        <div class="panel-head">
+            <div class="panel-title">📦 Services (store_services)</div>
+            <div style="font-size:0.62rem;color:var(--silver);opacity:0.6;"><?= count($storeServices) ?> service(s)</div>
+        </div>
+        <div class="panel-body">
+            <div class="tbl-scroll">
+            <table class="tbl">
+                <thead><tr>
+                    <th>ID</th><th>Nom</th><th>Icône</th><th>Prix</th><th>Devise</th><th>Type</th><th>Catégories</th><th>New</th><th>Statut</th><th>Actions</th>
+                </tr></thead>
+                <tbody>
+                <?php if (empty($storeServices)): ?>
+                <tr><td colspan="10" class="empty">Aucun service.</td></tr>
+                <?php else: foreach ($storeServices as $svc): ?>
+                <?php $svcLinkedCats = $svcCatIndex[$svc['id']] ?? []; ?>
+                <tr>
+                    <td style="font-size:0.75rem;opacity:0.5;"><?= (int)$svc['id'] ?></td>
+                    <td>
+                        <div class="t-name" style="max-width:180px;white-space:normal;word-break:break-word;"><?= htmlspecialchars(str_replace(["\n","\r"],['↵',''],$svc['name'])) ?></div>
+                        <?php if ($svc['tooltipName']): ?>
+                        <div class="t-id"><?= htmlspecialchars($svc['tooltipName']) ?></div>
+                        <?php endif; ?>
+                    </td>
+                    <td style="font-size:0.72rem;font-family:monospace;color:var(--arcane-bright);max-width:120px;overflow:hidden;text-overflow:ellipsis;"><?= htmlspecialchars($svc['icon']??'') ?></td>
+                    <td><span class="t-price dp"><?= number_format((int)$svc['price'],0,',',' ') ?></span></td>
+                    <td>
+                        <span class="bdg bdg-cat" title="ID <?= (int)$svc['currency'] ?>">
+                            <?= htmlspecialchars($curMap[$svc['currency']]['name'] ?? 'ID '.$svc['currency']) ?>
+                        </span>
+                    </td>
+                    <td style="font-size:0.75rem;text-align:center;"><?= (int)$svc['type'] ?></td>
+                    <td>
+                        <?php foreach ($svcLinkedCats as $cid): ?>
+                            <span class="bdg bdg-cat" style="margin:1px 2px;"><?= htmlspecialchars($catMap2[$cid]['name'] ?? '#'.$cid) ?></span>
+                        <?php endforeach; ?>
+                        <?php if (empty($svcLinkedCats)): ?><span style="opacity:0.3;font-size:0.72rem;">—</span><?php endif; ?>
+                    </td>
+                    <td style="text-align:center;"><?= $svc['new']?'<span class="bdg bdg-service">New</span>':'' ?></td>
+                    <td><span class="bdg <?= $svc['enabled']?'bdg-on':'bdg-off' ?>"><?= $svc['enabled']?'Actif':'Masqué' ?></span></td>
+                    <td>
+                        <div class="acts">
+                            <button class="btn btn-edit" onclick='openSvcModal(<?= htmlspecialchars(json_encode(array_merge($svc,['linked_cats'=>$svcLinkedCats])),ENT_QUOTES) ?>)'>✎ Éditer</button>
+                            <form method="POST" style="display:inline">
+                                <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+                                <input type="hidden" name="store_action" value="svc_toggle">
+                                <input type="hidden" name="svc_id" value="<?= (int)$svc['id'] ?>">
+                                <button type="submit" class="btn btn-tgl"><?= $svc['enabled']?'⊘ Masquer':'✦ Activer' ?></button>
+                            </form>
+                            <button class="btn btn-del" onclick="confirmStoreDelete('svc','<?= (int)$svc['id'] ?>','<?= htmlspecialchars(addslashes(str_replace(["\n","\r"],'',$svc['name']))) ?>')">🗑</button>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; endif; ?>
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+
+    <?php elseif ($section === 'store_currencies'): ?>
+    <!-- ═══ DEVISES TC ════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="panel-head">
+            <div class="panel-title">💰 Devises (store_currencies)</div>
+        </div>
+        <div class="panel-body">
+            <div class="tbl-scroll">
+            <table class="tbl">
+                <thead><tr>
+                    <th>ID</th><th>Type</th><th>Nom</th><th>Icône</th><th>Data</th><th>Tooltip</th><th>Actions</th>
+                </tr></thead>
+                <tbody>
+                <?php if (empty($storeCurrencies)): ?>
+                <tr><td colspan="7" class="empty">Aucune devise.</td></tr>
+                <?php else: foreach ($storeCurrencies as $cur): ?>
+                <tr>
+                    <td style="font-size:0.75rem;opacity:0.5;"><?= (int)$cur['id'] ?></td>
+                    <td style="font-size:0.78rem;text-align:center;"><?= (int)$cur['type'] ?></td>
+                    <td><div class="t-name"><?= htmlspecialchars($cur['name']) ?></div></td>
+                    <td style="font-family:monospace;font-size:0.75rem;color:var(--arcane-bright);"><?= htmlspecialchars($cur['icon']) ?></td>
+                    <td style="font-size:0.78rem;text-align:center;"><?= (int)$cur['data'] ?></td>
+                    <td style="font-size:0.78rem;color:var(--silver);opacity:0.65;"><?= htmlspecialchars($cur['tooltip']??'') ?></td>
+                    <td>
+                        <div class="acts">
+                            <button class="btn btn-edit" onclick='openCurModal(<?= htmlspecialchars(json_encode($cur),ENT_QUOTES) ?>)'>✎ Éditer</button>
+                            <button class="btn btn-del" onclick="confirmStoreDelete('cur','<?= (int)$cur['id'] ?>','<?= htmlspecialchars(addslashes($cur['name'])) ?>')">🗑 Suppr.</button>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; endif; ?>
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+
+    <?php elseif ($section === 'store_logs'): ?>
+    <!-- ═══ LOGS TC ═══════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="panel-head">
+            <div class="panel-title">📋 Logs boutique TC (store_logs — 300 derniers)</div>
+        </div>
+        <div class="panel-body">
+            <div class="tbl-scroll">
+            <table class="tbl">
+                <thead><tr>
+                    <th>Compte</th><th>Login</th><th>GUID perso</th><th>Service</th><th>Devise</th><th>Coût</th><th>Date</th>
+                </tr></thead>
+                <tbody>
+                <?php if (empty($storeLogs)): ?>
+                <tr><td colspan="7" class="empty">Aucun log enregistré.</td></tr>
+                <?php else: foreach ($storeLogs as $log): ?>
+                <tr>
+                    <td style="font-family:monospace;font-size:0.78rem;color:var(--arcane-bright);">#<?= (int)$log['account'] ?></td>
+                    <td style="font-size:0.78rem;"><?= htmlspecialchars($log['username']??'—') ?></td>
+                    <td style="font-size:0.78rem;opacity:0.6;font-family:monospace;"><?= $log['guid'] ? '#'.(int)$log['guid'] : '<span style="opacity:0.3">—</span>' ?></td>
+                    <td>
+                        <div class="t-name" style="font-size:0.75rem;"><?= htmlspecialchars($log['service_name']??'') ?></div>
+                        <div class="t-id">ID <?= (int)$log['serviceId'] ?></div>
+                    </td>
+                    <td><span class="bdg bdg-cat"><?= htmlspecialchars($log['currency_name']??'ID '.$log['currencyId']) ?></span></td>
+                    <td><span class="t-price dp"><?= number_format((int)$log['cost'],0,',',' ') ?></span></td>
+                    <td class="t-date"><?= htmlspecialchars($log['time']) ?></td>
+                </tr>
+                <?php endforeach; endif; ?>
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+
     <?php endif; ?>
 
 </main>
@@ -1567,6 +1984,298 @@ openEditModal(<?= json_encode($editItem) ?>);
         setTimeout(()=>f.remove(),650);
     },4000);
 })();
+</script>
+<!-- ═══ MODAL CATÉGORIE TC ════════════════════════════════════ -->
+<div class="overlay" id="catModal" onclick="if(event.target.id==='catModal')closeCatModal()">
+<div class="mbox" style="max-width:520px;">
+    <button class="mclose" onclick="closeCatModal()">✕</button>
+    <div class="mtitle" id="catModalTitle">✦ Nouvelle catégorie</div>
+    <form method="POST" id="catForm">
+        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+        <input type="hidden" name="store_action" id="catAction" value="cat_add">
+        <input type="hidden" name="cat_id" id="catId" value="0">
+        <div class="fg">
+            <div class="fgrp full">
+                <label class="flbl">Nom <span class="r">*</span></label>
+                <input class="fi" type="text" name="cat_name" id="catName" required maxlength="255" placeholder="Montures">
+            </div>
+            <div class="fgrp full">
+                <label class="flbl">Icône (nom texture WoW)</label>
+                <input class="fi" type="text" name="cat_icon" id="catIcon" maxlength="255" placeholder="inv_box_petcarrier_01">
+                <div class="fhint">Nom de la texture client (sans extension). Ex&nbsp;: ability_mount_spectraltiger</div>
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Rang requis</label>
+                <input class="fi" type="number" name="cat_rank" id="catRank" value="0" min="0">
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Flags</label>
+                <input class="fi" type="number" name="cat_flags" id="catFlags" value="0" min="0">
+                <div class="fhint">0 = normal · 1 = promo · 2 = à la une</div>
+            </div>
+            <div class="fgrp full" style="flex-direction:row;align-items:center;justify-content:flex-end;">
+                <label class="fcheck">
+                    <input type="checkbox" name="cat_enabled" id="catEnabled" value="1" checked>
+                    <span class="fcheck-lbl">Catégorie activée</span>
+                </label>
+            </div>
+        </div>
+        <div class="factions">
+            <button type="button" class="btn-cancel" onclick="closeCatModal()">Annuler</button>
+            <button type="submit" class="btn-gold" id="catSubmit">✦ Enregistrer</button>
+        </div>
+    </form>
+</div>
+</div>
+
+<!-- ═══ MODAL SERVICE TC ══════════════════════════════════════ -->
+<div class="overlay" id="svcModal" onclick="if(event.target.id==='svcModal')closeSvcModal()">
+<div class="mbox" style="max-width:780px;">
+    <button class="mclose" onclick="closeSvcModal()">✕</button>
+    <div class="mtitle" id="svcModalTitle">✦ Nouveau service</div>
+    <form method="POST" id="svcForm">
+        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+        <input type="hidden" name="store_action" id="svcAction" value="svc_add">
+        <input type="hidden" name="svc_id" id="svcId" value="0">
+        <div class="fg">
+            <div class="fgrp full">
+                <label class="flbl">Nom (affiché en jeu) <span class="r">*</span></label>
+                <input class="fi" type="text" name="svc_name" id="svcName" required maxlength="500" placeholder="Tigre spectral rapide">
+                <div class="fhint">Supporte \n pour retour à la ligne dans le client.</div>
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Nom tooltip</label>
+                <input class="fi" type="text" name="svc_tooltip_name" id="svcTooltipName" maxlength="500">
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Type tooltip</label>
+                <select class="fs" name="svc_tooltip_type" id="svcTooltipType">
+                    <option value="">— aucun —</option>
+                    <option value="spell">spell</option>
+                    <option value="gold">gold</option>
+                    <option value="item">item</option>
+                </select>
+            </div>
+            <div class="fgrp full">
+                <label class="flbl">Texte tooltip</label>
+                <textarea class="fta" name="svc_tooltip_text" id="svcTooltipText" maxlength="2000" placeholder="|cff00FFFFCliquez sur l'image pour voir l'aperçu!|r" style="min-height:52px;"></textarea>
+            </div>
+            <div class="fgrp full">
+                <label class="flbl">Icône (nom texture WoW)</label>
+                <input class="fi" type="text" name="svc_icon" id="svcIcon" maxlength="255" placeholder="ability_mount_spectraltiger">
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Prix <span class="r">*</span></label>
+                <input class="fi" type="number" name="svc_price" id="svcPrice" min="0" required value="0">
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Devise (currency ID)</label>
+                <select class="fs" name="svc_currency" id="svcCurrency">
+                    <?php foreach ($storeCurrencies as $cur): ?>
+                    <option value="<?= (int)$cur['id'] ?>"><?= htmlspecialchars($cur['name']) ?> (ID <?= $cur['id'] ?>)</option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Type (service type)</label>
+                <input class="fi" type="number" name="svc_type_val" id="svcTypeVal" value="3" min="0">
+                <div class="fhint">1=char · 2=account · 3=spell · 4=item · 5=gold · etc.</div>
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Flags</label>
+                <input class="fi" type="number" name="svc_flags" id="svcFlags" value="0">
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Hyperlink ID</label>
+                <input class="fi" type="number" name="svc_hyperlink" id="svcHyperlink" value="0" min="0">
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Creature Entry</label>
+                <input class="fi" type="number" name="svc_creature" id="svcCreature" value="0" min="0">
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Discount Amount</label>
+                <input class="fi" type="number" name="svc_discount" id="svcDiscount" value="0" min="0">
+            </div>
+            <!-- Rewards -->
+            <div class="fgrp full" style="margin-top:0.5rem;">
+                <div class="flbl" style="margin-bottom:0.5rem;">Récompenses (reward_1 à reward_8 / rewardcount_1 à rewardcount_8)</div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem 0.8rem;">
+                    <?php for($ri=1;$ri<=8;$ri++): ?>
+                    <div style="display:flex;flex-direction:column;gap:0.22rem;">
+                        <label class="fhint">R<?= $ri ?> ID</label>
+                        <input class="fi" type="number" name="reward_<?= $ri ?>" id="svcReward<?= $ri ?>" value="0" min="0" style="padding:0.4rem 0.5rem;font-size:0.8rem;">
+                        <label class="fhint">Qté <?= $ri ?></label>
+                        <input class="fi" type="number" name="rewardcount_<?= $ri ?>" id="svcRCount<?= $ri ?>" value="0" min="0" style="padding:0.4rem 0.5rem;font-size:0.8rem;">
+                    </div>
+                    <?php endfor; ?>
+                </div>
+            </div>
+            <!-- Catégories liées -->
+            <div class="fgrp full">
+                <label class="flbl">Catégories liées (store_category_service_link)</label>
+                <div style="display:flex;flex-wrap:wrap;gap:0.4rem;padding:0.6rem;background:rgba(6,8,26,0.6);border:1px solid rgba(136,144,255,0.15);border-radius:6px;">
+                    <?php foreach ($storeCategories as $cat): ?>
+                    <label style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;padding:0.25rem 0.5rem;border:1px solid rgba(136,144,255,0.15);border-radius:4px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='rgba(136,144,255,0.4)'" onmouseout="this.style.borderColor='rgba(136,144,255,0.15)'">
+                        <input type="checkbox" name="svc_cats[]" value="<?= (int)$cat['id'] ?>" class="svc-cat-cb" data-catid="<?= (int)$cat['id'] ?>" style="accent-color:var(--arcane-glow);width:13px;height:13px;">
+                        <span style="font-family:'Cinzel',serif;font-size:0.55rem;letter-spacing:0.08em;color:var(--silver);"><?= htmlspecialchars($cat['name']) ?></span>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <div class="fgrp" style="flex-direction:row;align-items:center;gap:1.5rem;">
+                <label class="fcheck">
+                    <input type="checkbox" name="svc_new" id="svcNew" value="1">
+                    <span class="fcheck-lbl">🆕 Marquer "New"</span>
+                </label>
+                <label class="fcheck">
+                    <input type="checkbox" name="svc_enabled" id="svcEnabled" value="1" checked>
+                    <span class="fcheck-lbl">Activé</span>
+                </label>
+            </div>
+        </div>
+        <div class="factions">
+            <button type="button" class="btn-cancel" onclick="closeSvcModal()">Annuler</button>
+            <button type="submit" class="btn-gold" id="svcSubmit">✦ Enregistrer</button>
+        </div>
+    </form>
+</div>
+</div>
+
+<!-- ═══ MODAL DEVISE TC ═══════════════════════════════════════ -->
+<div class="overlay" id="curModal" onclick="if(event.target.id==='curModal')closeCurModal()">
+<div class="mbox" style="max-width:480px;">
+    <button class="mclose" onclick="closeCurModal()">✕</button>
+    <div class="mtitle" id="curModalTitle">✦ Nouvelle devise</div>
+    <form method="POST" id="curForm">
+        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+        <input type="hidden" name="store_action" id="curAction" value="cur_add">
+        <input type="hidden" name="cur_id" id="curId" value="0">
+        <div class="fg">
+            <div class="fgrp">
+                <label class="flbl">Nom <span class="r">*</span></label>
+                <input class="fi" type="text" name="cur_name" id="curName" required maxlength="50">
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Type</label>
+                <input class="fi" type="number" name="cur_type" id="curType" value="1" min="1">
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Icône</label>
+                <input class="fi" type="text" name="cur_icon" id="curIcon" maxlength="50">
+            </div>
+            <div class="fgrp">
+                <label class="flbl">Data (item template ID)</label>
+                <input class="fi" type="number" name="cur_data" id="curData" value="0" min="0">
+            </div>
+            <div class="fgrp full">
+                <label class="flbl">Tooltip</label>
+                <input class="fi" type="text" name="cur_tooltip" id="curTooltip" maxlength="255">
+            </div>
+        </div>
+        <div class="factions">
+            <button type="button" class="btn-cancel" onclick="closeCurModal()">Annuler</button>
+            <button type="submit" class="btn-gold" id="curSubmit">✦ Enregistrer</button>
+        </div>
+    </form>
+</div>
+</div>
+
+<!-- ═══ MODAL SUPPRESSION TC ═════════════════════════════════ -->
+<div class="overlay" id="storeDelModal" onclick="if(event.target.id==='storeDelModal')closeStoreDelModal()">
+<div class="mbox" style="max-width:440px;">
+    <button class="mclose" onclick="closeStoreDelModal()">✕</button>
+    <div class="dtitle">⚠ Confirmer la suppression</div>
+    <p class="dtext">Supprimer <strong id="storeDelName" style="color:var(--white);"></strong> ?<br><br>Cette action est <strong style="color:var(--error);">irréversible</strong>.</p>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+        <input type="hidden" name="store_action" id="storeDelAction" value="">
+        <input type="hidden" name="cat_id" id="storeDelCatId" value="">
+        <input type="hidden" name="svc_id" id="storeDelSvcId" value="">
+        <input type="hidden" name="cur_id" id="storeDelCurId" value="">
+        <div class="factions">
+            <button type="button" class="btn-cancel" onclick="closeStoreDelModal()">Annuler</button>
+            <button type="submit" class="btn btn-del" style="padding:0.5rem 1.1rem;font-size:0.58rem;">🗑 Supprimer</button>
+        </div>
+    </form>
+</div>
+</div>
+
+<script>
+// ─── HELPERS OVERLAY STORE TC ─────────────────────────────────
+function openCatModal(cat) {
+    const isEdit = !!cat;
+    document.getElementById('catModalTitle').textContent = isEdit ? '✎ Modifier la catégorie' : '✦ Nouvelle catégorie';
+    document.getElementById('catAction').value  = isEdit ? 'cat_edit' : 'cat_add';
+    document.getElementById('catId').value      = isEdit ? cat.id : 0;
+    document.getElementById('catName').value    = isEdit ? (cat.name||'') : '';
+    document.getElementById('catIcon').value    = isEdit ? (cat.icon||'') : '';
+    document.getElementById('catRank').value    = isEdit ? (cat.requiredRank||0) : 0;
+    document.getElementById('catFlags').value   = isEdit ? (cat.flags||0) : 0;
+    document.getElementById('catEnabled').checked = isEdit ? (cat.enabled==1) : true;
+    openOverlay('catModal');
+}
+function closeCatModal() { closeOverlay('catModal'); }
+
+function openSvcModal(svc) {
+    const isEdit = !!svc;
+    document.getElementById('svcModalTitle').textContent = isEdit ? '✎ Modifier le service' : '✦ Nouveau service';
+    document.getElementById('svcAction').value      = isEdit ? 'svc_edit' : 'svc_add';
+    document.getElementById('svcId').value          = isEdit ? (svc.id||0) : 0;
+    document.getElementById('svcName').value        = isEdit ? (svc.name||'') : '';
+    document.getElementById('svcTooltipName').value = isEdit ? (svc.tooltipName||'') : '';
+    document.getElementById('svcTooltipType').value = isEdit ? (svc.tooltipType||'') : '';
+    document.getElementById('svcTooltipText').value = isEdit ? (svc.tooltipText||'') : '';
+    document.getElementById('svcIcon').value        = isEdit ? (svc.icon||'') : '';
+    document.getElementById('svcPrice').value       = isEdit ? (svc.price||0) : 0;
+    document.getElementById('svcCurrency').value    = isEdit ? (svc.currency||2) : 2;
+    document.getElementById('svcTypeVal').value     = isEdit ? (svc.type||3) : 3;
+    document.getElementById('svcFlags').value       = isEdit ? (svc.flags||0) : 0;
+    document.getElementById('svcHyperlink').value   = isEdit ? (svc.hyperlinkId||0) : 0;
+    document.getElementById('svcCreature').value    = isEdit ? (svc.creatureEntry||0) : 0;
+    document.getElementById('svcDiscount').value    = isEdit ? (svc.discountAmount||0) : 0;
+    document.getElementById('svcNew').checked       = isEdit ? (svc.new==1) : false;
+    document.getElementById('svcEnabled').checked   = isEdit ? (svc.enabled==1) : true;
+    for (let i=1;i<=8;i++) {
+        document.getElementById('svcReward'+i).value = isEdit ? (svc['reward_'+i]||0) : 0;
+        document.getElementById('svcRCount'+i).value = isEdit ? (svc['rewardcount_'+i]||0) : 0;
+    }
+    // catégories cochées
+    const linked = isEdit ? (svc.linked_cats||[]) : [];
+    document.querySelectorAll('.svc-cat-cb').forEach(cb => {
+        cb.checked = linked.includes(parseInt(cb.dataset.catid));
+    });
+    openOverlay('svcModal');
+}
+function closeSvcModal() { closeOverlay('svcModal'); }
+
+function openCurModal(cur) {
+    const isEdit = !!cur;
+    document.getElementById('curModalTitle').textContent = isEdit ? '✎ Modifier la devise' : '✦ Nouvelle devise';
+    document.getElementById('curAction').value  = isEdit ? 'cur_edit' : 'cur_add';
+    document.getElementById('curId').value      = isEdit ? cur.id : 0;
+    document.getElementById('curName').value    = isEdit ? (cur.name||'') : '';
+    document.getElementById('curType').value    = isEdit ? (cur.type||1) : 1;
+    document.getElementById('curIcon').value    = isEdit ? (cur.icon||'') : '';
+    document.getElementById('curData').value    = isEdit ? (cur.data||0) : 0;
+    document.getElementById('curTooltip').value = isEdit ? (cur.tooltip||'') : '';
+    openOverlay('curModal');
+}
+function closeCurModal() { closeOverlay('curModal'); }
+
+function confirmStoreDelete(type, id, name) {
+    document.getElementById('storeDelName').textContent = name;
+    document.getElementById('storeDelAction').value = type+'_delete';
+    document.getElementById('storeDelCatId').value = type==='cat' ? id : '';
+    document.getElementById('storeDelSvcId').value = type==='svc' ? id : '';
+    document.getElementById('storeDelCurId').value = type==='cur' ? id : '';
+    openOverlay('storeDelModal');
+}
+function closeStoreDelModal() { closeOverlay('storeDelModal'); }
+
+document.addEventListener('keydown', e => {
+    if (e.key==='Escape') { closeCatModal(); closeSvcModal(); closeCurModal(); closeStoreDelModal(); }
+});
 </script>
 </body>
 </html>
