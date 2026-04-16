@@ -481,6 +481,47 @@ $pageTitle = 'Admin — Eons CMS';
     --sw:            240px;   /* sidebar width */
 }
 html { scroll-behavior:smooth; }
+
+/* ─── SCROLLBAR CUSTOM ───────────────────────────────────────── */
+/* Chromium / Edge / Safari */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--deep-void);
+    border-left: 1px solid rgba(136,144,255,0.07);
+}
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+        180deg,
+        var(--void-purple)  0%,
+        var(--arcane-glow)  50%,
+        var(--gold)         100%
+    );
+    border-radius: 4px;
+    border: 1px solid rgba(136,144,255,0.15);
+    box-shadow: 0 0 6px rgba(72,85,212,0.45);
+    transition: background 0.2s, box-shadow 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+        180deg,
+        var(--void-bright)   0%,
+        var(--arcane-bright) 50%,
+        var(--gold-bright)   100%
+    );
+    box-shadow: 0 0 12px rgba(136,144,255,0.7);
+}
+::-webkit-scrollbar-corner {
+    background: var(--deep-void);
+}
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--arcane-glow) var(--deep-void);
+}
+
 body {
     font-family:'Crimson Pro', Georgia, serif;
     background:var(--midnight);
