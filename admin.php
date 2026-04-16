@@ -132,6 +132,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $flash = '🗑 Article supprimé.';
                     $flashType = 'info';
                 }
+            } elseif ($action === 'news_add' || $action === 'news_edit') {
+                $newsTitle    = mb_substr(trim($_POST['news_title']    ?? ''), 0, 255);
+                $newsSlug     = mb_substr(preg_replace('/[^a-z0-9\-]/', '', str_replace(' ', '-', strtolower(trim($_POST['news_slug'] ?? $_POST['news_title'] ?? '')))), 0, 255);
+                $newsCategory = in_array($_POST['news_category'] ?? '', ['patch','event','maintenance','annonce','hotfix']) ? $_POST['news_category'] : 'annonce';
+                $newsExcerpt  = mb_substr(trim($_POST['news_excerpt']  ?? ''), 0, 1000);
+                $newsContent  = trim($_POST['news_content']  ?? '');
+                $newsImageUrl = mb_substr(trim($_POST['news_image_url'] ?? ''), 0, 512);
+                $newsAuthor   = mb_substr(trim($_POST['news_author']   ?? 'Équipe Eons'), 0, 64);
+                $newsPinned   = isset($_POST['news_pinned'])    ? 1 : 0;
+                $newsPublished= isset($_POST['news_published'])  ? 1 : 0;
+                if (empty($newsTitle)) {
+                    $flash = '⚠ Le titre est obligatoire.'; $flashType = 'error';
+                } else {
+                    if ($action === 'news_add') {
+                        $db->prepare(
+                            "INSERT INTO news (title,slug,category,excerpt,content,image_url,author,pinned,published)
+                             VALUES (:title,:slug,:category,:excerpt,:content,:image_url,:author,:pinned,:published)"
+                        )->execute([
+                            ':title'=>$newsTitle,':slug'=>$newsSlug,':category'=>$newsCategory,
+                            ':excerpt'=>$newsExcerpt,':content'=>$newsContent,':image_url'=>$newsImageUrl,
+                            ':author'=>$newsAuthor,':pinned'=>$newsPinned,':published'=>$newsPublished,
+                        ]);
+                        $flash = '✦ Actualité <strong>' . htmlspecialchars($newsTitle) . '</strong> publiée.';
+                    } else {
+                        $newsId = (int)($_POST['news_id'] ?? 0);
+                        $db->prepare(
+                            "UPDATE news SET title=:title,slug=:slug,category=:category,excerpt=:excerpt,
+                             content=:content,image_url=:image_url,author=:author,pinned=:pinned,published=:published
+                             WHERE id=:id"
+                        )->execute([
+                            ':title'=>$newsTitle,':slug'=>$newsSlug,':category'=>$newsCategory,
+                            ':excerpt'=>$newsExcerpt,':content'=>$newsContent,':image_url'=>$newsImageUrl,
+                            ':author'=>$newsAuthor,':pinned'=>$newsPinned,':published'=>$newsPublished,':id'=>$newsId,
+                        ]);
+                        $flash = '✦ Actualité <strong>' . htmlspecialchars($newsTitle) . '</strong> mise à jour.';
+                    }
+                }
+            } elseif ($action === 'news_delete') {
+                $newsId = (int)($_POST['news_id'] ?? 0);
+                if ($newsId) {
+                    $db->prepare("DELETE FROM news WHERE id=:id")->execute([':id'=>$newsId]);
+                    $flash = '🗑 Actualité supprimée.'; $flashType = 'info';
+                }
+            } elseif ($action === 'news_toggle') {
+                $newsId = (int)($_POST['news_id'] ?? 0);
+                if ($newsId) {
+                    $db->prepare("UPDATE news SET published=1-published WHERE id=:id")->execute([':id'=>$newsId]);
+                    $_SESSION['flash_admin']      = '✦ Visibilité modifiée.';
+                    $_SESSION['flash_admin_type'] = 'success';
+                    header('Location: admin.php?section=news');
+                    exit;
+                }
+            } elseif ($action === 'news_pin') {
+                $newsId = (int)($_POST['news_id'] ?? 0);
+                if ($newsId) {
+                    $db->prepare("UPDATE news SET pinned=1-pinned WHERE id=:id")->execute([':id'=>$newsId]);
+                    $_SESSION['flash_admin']      = '✦ Épinglage modifié.';
+                    $_SESSION['flash_admin_type'] = 'success';
+                    header('Location: admin.php?section=news');
+                    exit;
+                }
             } elseif ($action === 'toggle') {
                 $toggleId = sanitizeId($_POST['toggle_id'] ?? '');
                 if ($toggleId) {
@@ -150,10 +211,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // PRG : redirect après add/edit/delete pour éviter le double-submit
         if (empty($flash)) {
             // succès sans flash spécifique (ne devrait pas arriver)
-        } elseif ($flashType !== 'error' && in_array($action, ['add','edit','delete'])) {
+        } elseif ($flashType !== 'error' && in_array($action, ['add','edit','delete','news_add','news_edit','news_delete'])) {
             $_SESSION['flash_admin']      = $flash;
             $_SESSION['flash_admin_type'] = $flashType ?: 'success';
-            header('Location: admin.php?section=catalogue');
+            $redirSec = in_array($action, ['news_add','news_edit','news_delete']) ? 'news' : 'catalogue';
+            header('Location: admin.php?section='.$redirSec);
             exit;
         }
     }
@@ -429,6 +491,18 @@ if ($section === 'accounts') {
              LIMIT 500"
         )->fetchAll();
     } catch (PDOException $e) { $accounts = []; }
+}
+
+// ── News ──────────────────────────────────────────────────────
+$newsList = [];
+if ($section === 'news') {
+    try {
+        $db = getAuthDB();
+        $newsList = $db->query(
+            "SELECT id, title, slug, category, excerpt, author, pinned, published, created_at, updated_at
+             FROM news ORDER BY pinned DESC, created_at DESC LIMIT 200"
+        )->fetchAll();
+    } catch (PDOException $e) { $newsList = []; }
 }
 
 // ── Item à éditer (pré-remplissage modal) ─────────────────────
@@ -1182,6 +1256,10 @@ body::before {
         <a href="admin.php?section=accounts" class="sb-link <?= ($section==='accounts')?'active':'' ?>">
             <i>👤</i> Comptes
         </a>
+        <div class="sb-section">Contenu</div>
+        <a href="admin.php?section=news" class="sb-link <?= ($section==='news')?'active':'' ?>">
+            <i>📰</i> Actualités
+        </a>
     </nav>
 
     <div class="sb-footer">
@@ -1213,6 +1291,8 @@ body::before {
             <div class="page-title">Devises TC</div>
             <?php elseif ($section === 'store_logs'): ?>
             <div class="page-title">Logs Boutique TC</div>
+            <?php elseif ($section === 'news'): ?>
+            <div class="page-title">Actualités</div>
             <?php endif; ?>
         </div>
         <?php if ($section === 'catalogue'): ?>
@@ -1223,6 +1303,8 @@ body::before {
         <button class="btn-add" onclick="openSvcModal()">✦ Nouveau service</button>
         <?php elseif ($section === 'store_currencies'): ?>
         <button class="btn-add" onclick="openCurModal()">✦ Nouvelle devise</button>
+        <?php elseif ($section === 'news'): ?>
+        <button class="btn-add" onclick="openNewsModal()">✦ Nouvelle actualité</button>
         <?php endif; ?>
     </div>
 
@@ -1728,9 +1810,120 @@ body::before {
         </div>
     </div>
 
-    <?php endif; ?>
+    <?php elseif ($section === 'news'): ?>
+    <!-- ═══ ACTUALITÉS ══════════════════════════════════════════ -->
+    <?php
+    $totalNews     = count($newsList);
+    $publishedNews = count(array_filter($newsList, function($n){ return $n['published']; }));
+    $pinnedNews    = count(array_filter($newsList, function($n){ return $n['pinned']; }));
+    $catNews       = array_count_values(array_column($newsList, 'category'));
+    ?>
+    <div class="stats" style="grid-template-columns:repeat(4,1fr);">
+        <div class="stat" style="--a:var(--gold-bright)">
+            <div class="stat-val"><?= $totalNews ?></div>
+            <div class="stat-lbl">Total</div>
+        </div>
+        <div class="stat" style="--a:var(--success)">
+            <div class="stat-val"><?= $publishedNews ?></div>
+            <div class="stat-lbl">Publiées</div>
+        </div>
+        <div class="stat" style="--a:var(--void-bright)">
+            <div class="stat-val"><?= $pinnedNews ?></div>
+            <div class="stat-lbl">Épinglées</div>
+        </div>
+        <div class="stat" style="--a:var(--info)">
+            <div class="stat-val"><?= $totalNews - $publishedNews ?></div>
+            <div class="stat-lbl">Brouillons</div>
+        </div>
+    </div>
+    <div class="panel">
+        <div class="panel-head">
+            <div class="panel-title">📰 Gestion des actualités</div>
+            <div class="filters">
+                <button class="f-btn active" onclick="filterNews('all',this)">Toutes</button>
+                <button class="f-btn" onclick="filterNews('annonce',this)">📣 Annonce</button>
+                <button class="f-btn" onclick="filterNews('patch',this)">🛠 Patch</button>
+                <button class="f-btn" onclick="filterNews('event',this)">🎉 Événement</button>
+                <button class="f-btn" onclick="filterNews('maintenance',this)">🔧 Maintenance</button>
+                <button class="f-btn" onclick="filterNews('hotfix',this)">🔥 Hotfix</button>
+            </div>
+        </div>
+        <div class="panel-body">
+            <div class="tbl-scroll">
+            <table class="tbl" id="newsTable">
+                <thead>
+                    <tr>
+                        <th style="width:2.5rem;"></th>
+                        <th>Titre</th>
+                        <th>Catégorie</th>
+                        <th>Auteur</th>
+                        <th>Épinglé</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if (empty($newsList)): ?>
+                <tr><td colspan="8" class="empty">Aucune actualité. Créez votre première news !</td></tr>
+                <?php else: foreach ($newsList as $n): ?>
+                <?php
+                    $catLabels = ['patch'=>'🛠 Patch','event'=>'🎉 Événement','maintenance'=>'🔧 Maintenance','annonce'=>'📣 Annonce','hotfix'=>'🔥 Hotfix'];
+                    $catLabel  = $catLabels[$n['category']] ?? $n['category'];
+                ?>
+                <tr data-newscategory="<?= htmlspecialchars($n['category']) ?>">
+                    <td class="t-icon"><?= $n['pinned'] ? '📌' : '📄' ?></td>
+                    <td>
+                        <div class="t-name"><?= htmlspecialchars($n['title']) ?></div>
+                        <div class="t-id"><?= htmlspecialchars($n['slug']) ?></div>
+                    </td>
+                    <td><span class="bdg bdg-cat"><?= $catLabel ?></span></td>
+                    <td style="font-size:0.78rem;color:var(--silver);"><?= htmlspecialchars($n['author']) ?></td>
+                    <td>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+                            <input type="hidden" name="action" value="news_pin">
+                            <input type="hidden" name="news_id" value="<?= (int)$n['id'] ?>">
+                            <button type="submit" class="btn <?= $n['pinned'] ? 'btn-edit' : 'btn-tgl' ?>" style="padding:0.25rem 0.65rem;font-size:0.55rem;">
+                                <?= $n['pinned'] ? '📌 Oui' : '— Non' ?>
+                            </button>
+                        </form>
+                    </td>
+                    <td>
+                        <span class="bdg <?= $n['published'] ? 'bdg-on' : 'bdg-off' ?>">
+                            <?= $n['published'] ? 'Publiée' : 'Brouillon' ?>
+                        </span>
+                    </td>
+                    <td class="t-date"><?= htmlspecialchars(substr($n['created_at'], 0, 16)) ?></td>
+                    <td>
+                        <div class="acts">
+                            <button class="btn btn-edit"
+                                onclick="openNewsEditModal(<?= htmlspecialchars(json_encode($n), ENT_QUOTES) ?>)">
+                                ✎ Éditer
+                            </button>
+                            <form method="POST" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+                                <input type="hidden" name="action" value="news_toggle">
+                                <input type="hidden" name="news_id" value="<?= (int)$n['id'] ?>">
+                                <button type="submit" class="btn btn-tgl">
+                                    <?= $n['published'] ? '⊘ Dépublier' : '✦ Publier' ?>
+                                </button>
+                            </form>
+                            <button class="btn btn-del"
+                                onclick="confirmNewsDel(<?= (int)$n['id'] ?>,'<?= htmlspecialchars(addslashes($n['title'])) ?>')">
+                                🗑 Suppr.
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; endif; ?>
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
 
-</main>
+    <?php endif; ?>
 </div><!-- /shell -->
 
 
@@ -2315,8 +2508,157 @@ function confirmStoreDelete(type, id, name) {
 function closeStoreDelModal() { closeOverlay('storeDelModal'); }
 
 document.addEventListener('keydown', e => {
-    if (e.key==='Escape') { closeCatModal(); closeSvcModal(); closeCurModal(); closeStoreDelModal(); }
+    if (e.key==='Escape') { closeCatModal(); closeSvcModal(); closeCurModal(); closeStoreDelModal(); closeNewsModal(); closeNewsDelModal(); }
 });
+
+// ─── MODAL ACTUALITÉ ──────────────────────────────────────────
+function autoSlug(val) {
+    const slug = val.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s\-]/g, '')
+        .trim().replace(/\s+/g, '-');
+    document.getElementById('nf_slug').value = slug;
+}
+
+function openNewsModal() {
+    document.getElementById('newsModalTitle').textContent = '✦ Nouvelle actualité';
+    document.getElementById('newsAction').value   = 'news_add';
+    document.getElementById('newsId').value       = '0';
+    document.getElementById('nf_title').value     = '';
+    document.getElementById('nf_slug').value      = '';
+    document.getElementById('nf_category').value  = 'annonce';
+    document.getElementById('nf_author').value    = 'Équipe Eons';
+    document.getElementById('nf_excerpt').value   = '';
+    document.getElementById('nf_content').value   = '';
+    document.getElementById('nf_image_url').value = '';
+    document.getElementById('nf_pinned').checked    = false;
+    document.getElementById('nf_published').checked = true;
+    document.getElementById('newsSubmit').textContent = '✦ Publier';
+    openOverlay('newsModal');
+}
+
+function openNewsEditModal(n) {
+    document.getElementById('newsModalTitle').textContent = '✎ Modifier l\'actualité';
+    document.getElementById('newsAction').value   = 'news_edit';
+    document.getElementById('newsId').value       = n.id || 0;
+    document.getElementById('nf_title').value     = n.title     || '';
+    document.getElementById('nf_slug').value      = n.slug      || '';
+    document.getElementById('nf_category').value  = n.category  || 'annonce';
+    document.getElementById('nf_author').value    = n.author    || 'Équipe Eons';
+    document.getElementById('nf_excerpt').value   = n.excerpt   || '';
+    document.getElementById('nf_content').value   = n.content   || '';
+    document.getElementById('nf_image_url').value = n.image_url || '';
+    document.getElementById('nf_pinned').checked    = n.pinned    == 1;
+    document.getElementById('nf_published').checked = n.published == 1;
+    document.getElementById('newsSubmit').textContent = '✦ Enregistrer';
+    openOverlay('newsModal');
+}
+
+function closeNewsModal() { closeOverlay('newsModal'); }
+
+function confirmNewsDel(id, title) {
+    document.getElementById('newsDelName').textContent = title;
+    document.getElementById('newsDelId').value = id;
+    openOverlay('newsDelModal');
+}
+
+function closeNewsDelModal() { closeOverlay('newsDelModal'); }
 </script>
+<!-- ═══ MODAL ACTUALITÉ ═══════════════════════════════════════ -->
+<div class="overlay" id="newsModal" onclick="if(event.target.id==='newsModal')closeNewsModal()">
+<div class="mbox" style="max-width:760px;">
+    <button class="mclose" onclick="closeNewsModal()">✕</button>
+    <div class="mtitle" id="newsModalTitle">✦ Nouvelle actualité</div>
+    <form method="POST" id="newsForm">
+        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+        <input type="hidden" name="action" id="newsAction" value="news_add">
+        <input type="hidden" name="news_id" id="newsId" value="0">
+        <div class="fg">
+            <div class="fgrp full">
+                <label class="flbl" for="nf_title">Titre <span class="r">*</span></label>
+                <input class="fi" type="text" id="nf_title" name="news_title" required maxlength="255"
+                       placeholder="Patch 1.2 — Nouveaux donjons"
+                       oninput="autoSlug(this.value)">
+            </div>
+            <div class="fgrp full">
+                <label class="flbl" for="nf_slug">Slug (URL)</label>
+                <input class="fi" type="text" id="nf_slug" name="news_slug" maxlength="255"
+                       placeholder="patch-1-2-nouveaux-donjons">
+                <div class="fhint">Généré automatiquement depuis le titre. Modifiable.</div>
+            </div>
+            <div class="fgrp">
+                <label class="flbl" for="nf_category">Catégorie</label>
+                <select class="fs" id="nf_category" name="news_category">
+                    <option value="annonce">📣 Annonce</option>
+                    <option value="patch">🛠 Patch</option>
+                    <option value="event">🎉 Événement</option>
+                    <option value="maintenance">🔧 Maintenance</option>
+                    <option value="hotfix">🔥 Hotfix</option>
+                </select>
+            </div>
+            <div class="fgrp">
+                <label class="flbl" for="nf_author">Auteur</label>
+                <input class="fi" type="text" id="nf_author" name="news_author"
+                       value="Équipe Eons" maxlength="64">
+            </div>
+            <div class="fgrp full">
+                <label class="flbl" for="nf_excerpt">Extrait <span style="opacity:.5;font-size:.85em;">(résumé affiché en liste)</span></label>
+                <textarea class="fta" id="nf_excerpt" name="news_excerpt"
+                          placeholder="Bref résumé de l'actualité visible sur la page d'accueil..." style="min-height:70px;"></textarea>
+            </div>
+            <div class="fgrp full">
+                <label class="flbl" for="nf_content">Contenu HTML <span class="r">*</span></label>
+                <textarea class="fta" id="nf_content" name="news_content" required
+                          placeholder="&lt;p&gt;Contenu complet de l'actualité en HTML...&lt;/p&gt;"
+                          style="min-height:180px;font-family:monospace;font-size:0.78rem;"></textarea>
+                <div class="fhint">HTML accepté : &lt;p&gt; &lt;h3&gt; &lt;ul&gt; &lt;li&gt; &lt;strong&gt; &lt;em&gt; etc.</div>
+            </div>
+            <div class="fgrp full">
+                <label class="flbl" for="nf_image_url">URL de l'image de couverture</label>
+                <input class="fi" type="text" id="nf_image_url" name="news_image_url"
+                       placeholder="https://eons-world.eu/img/news/patch-1-2.jpg" maxlength="512">
+            </div>
+            <div class="fgrp full" style="flex-direction:row;align-items:center;gap:2rem;justify-content:flex-end;">
+                <label class="fcheck">
+                    <input type="checkbox" name="news_pinned" id="nf_pinned" value="1">
+                    <span class="fcheck-lbl">📌 Épingler</span>
+                </label>
+                <label class="fcheck">
+                    <input type="checkbox" name="news_published" id="nf_published" value="1" checked>
+                    <span class="fcheck-lbl">✦ Publier immédiatement</span>
+                </label>
+            </div>
+        </div>
+        <div class="factions">
+            <button type="button" class="btn-cancel" onclick="closeNewsModal()">Annuler</button>
+            <button type="submit" class="btn-gold" id="newsSubmit">✦ Publier</button>
+        </div>
+    </form>
+</div>
+</div>
+
+<!-- ═══ MODAL SUPPRESSION NEWS ════════════════════════════════ -->
+<div class="overlay" id="newsDelModal" onclick="if(event.target.id==='newsDelModal')closeNewsDelModal()">
+<div class="mbox" style="max-width:440px;">
+    <button class="mclose" onclick="closeNewsDelModal()">✕</button>
+    <div class="dtitle">⚠ Confirmer la suppression</div>
+    <p class="dtext">
+        Vous êtes sur le point de supprimer l'actualité<br>
+        <strong id="newsDelName" style="color:var(--white);"></strong>.<br><br>
+        Cette action est <strong style="color:var(--error);">irréversible</strong>.
+    </p>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+        <input type="hidden" name="action" value="news_delete">
+        <input type="hidden" name="news_id" id="newsDelId">
+        <div class="factions">
+            <button type="button" class="btn-cancel" onclick="closeNewsDelModal()">Annuler</button>
+            <button type="submit" class="btn btn-del" style="padding:0.5rem 1.1rem;font-size:0.58rem;">
+                🗑 Supprimer définitivement
+            </button>
+        </div>
+    </form>
+</div>
+</div>
 </body>
 </html>
