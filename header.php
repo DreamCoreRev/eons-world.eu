@@ -202,24 +202,22 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
             z-index: 1001;
         }
 
-        .nav-logo-icon { width: 38px; height: 38px; flex-shrink: 0; }
-
-        .nav-logo svg { animation: logoSpin 20s linear infinite; transform-origin: center; }
-
-        @keyframes logoSpin {
-            from { filter: drop-shadow(0 0 6px rgba(136,144,255,0.4)); }
-            50%  { filter: drop-shadow(0 0 14px rgba(240,192,96,0.6)) drop-shadow(0 0 28px rgba(136,144,255,0.3)); }
-            to   { filter: drop-shadow(0 0 6px rgba(136,144,255,0.4)); }
+        .nav-logo-icon {
+            height: 84px;
+            width: auto;
+            flex-shrink: 0;
+            filter: drop-shadow(0 0 6px rgba(136,144,255,0.4));
+            animation: logoGlow 4s ease-in-out infinite;
+            transition: filter 0.3s;
         }
 
-        .nav-logo-text {
-            font-family: 'Cinzel', serif;
-            font-weight: 700;
-            font-size: 1rem;
-            letter-spacing: 0.18em;
-            color: var(--gold-bright);
-            text-shadow: 0 0 24px rgba(240,192,96,0.55), 0 0 60px rgba(240,192,96,0.15);
-            white-space: nowrap;
+        .nav-logo:hover .nav-logo-icon {
+            filter: drop-shadow(0 0 14px rgba(240,192,96,0.6)) drop-shadow(0 0 28px rgba(136,144,255,0.3));
+        }
+
+        @keyframes logoGlow {
+            0%, 100% { filter: drop-shadow(0 0 6px rgba(136,144,255,0.4)); }
+            50%       { filter: drop-shadow(0 0 14px rgba(240,192,96,0.6)) drop-shadow(0 0 28px rgba(136,144,255,0.3)); }
         }
 
         .nav-links {
@@ -710,25 +708,7 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
 
 <nav>
     <a class="nav-logo" href="index.php">
-        <svg class="nav-logo-icon" width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="19" cy="19" r="17" stroke="#c89028" stroke-width="0.8" stroke-opacity="0.6"/>
-            <circle cx="19" cy="19" r="12" stroke="#8890ff" stroke-width="0.7" stroke-opacity="0.45"/>
-            <circle cx="19" cy="19" r="7"  stroke="#c89028" stroke-width="0.5" stroke-opacity="0.3"/>
-            <!-- Rune cross -->
-            <path d="M19 2 L20.5 12 L19 19 L17.5 12 Z" fill="#c89028" opacity="0.8"/>
-            <path d="M19 36 L20.5 26 L19 19 L17.5 26 Z" fill="#c89028" opacity="0.5"/>
-            <path d="M2 19 L12 17.5 L19 19 L12 20.5 Z" fill="#8890ff" opacity="0.8"/>
-            <path d="M36 19 L26 17.5 L19 19 L26 20.5 Z" fill="#8890ff" opacity="0.5"/>
-            <!-- Diagonal accents -->
-            <path d="M7 7 L13.5 13.5" stroke="#8890ff" stroke-width="0.6" stroke-opacity="0.3"/>
-            <path d="M31 7 L24.5 13.5" stroke="#8890ff" stroke-width="0.6" stroke-opacity="0.3"/>
-            <path d="M7 31 L13.5 24.5" stroke="#c89028" stroke-width="0.6" stroke-opacity="0.3"/>
-            <path d="M31 31 L24.5 24.5" stroke="#c89028" stroke-width="0.6" stroke-opacity="0.3"/>
-            <!-- Center gem -->
-            <circle cx="19" cy="19" r="3" fill="#f0c060" opacity="0.95"/>
-            <circle cx="19" cy="19" r="1.5" fill="white" opacity="0.6"/>
-        </svg>
-        <span class="nav-logo-text">Eons</span>
+        <img class="nav-logo-icon" src="/assets/images/logo/eons-logo.png" alt="Eons">
     </a>
 
     <ul class="nav-links">
