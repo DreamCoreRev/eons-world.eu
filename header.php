@@ -203,7 +203,7 @@ if (!isset($pageTitle)) $pageTitle = 'Eons';
         }
 
         .nav-logo-icon {
-            height: 84px;
+            height: 78px;
             width: auto;
             flex-shrink: 0;
             filter: drop-shadow(0 0 6px rgba(136,144,255,0.4));
