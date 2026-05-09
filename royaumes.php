@@ -709,6 +709,8 @@ require_once __DIR__ . '/header.php';
                         8  => '/assets/images/races/troll.png',
                         10 => '/assets/images/races/blood_elf.png',
                         11 => '/assets/images/races/draenei.png',
+						25 => '/assets/images/races/pandaren_male.png',
+						26 => '/assets/images/races/pandaren_male.png',
                     ];
                     $classIconFiles = [
                         1  => '/assets/images/class/IconeWarrior.png',
@@ -720,15 +722,16 @@ require_once __DIR__ . '/header.php';
                         7  => '/assets/images/class/IconeChaman.png',
                         8  => '/assets/images/class/IconeMage.png',
                         9  => '/assets/images/class/IconeWarlock.png',
+						10  => '/assets/images/class/IconeMonk.png',
                         11 => '/assets/images/class/IconeDruid.png',
                     ];
                     $classNamesOnline = [
                         1=>'Guerrier',2=>'Paladin',3=>'Chasseur',4=>'Voleur',5=>'Prêtre',
-                        6=>'Chevalier de la Mort',7=>'Chaman',8=>'Mage',9=>'Démoniste',11=>'Druide'
+                        6=>'Chevalier de la Mort',7=>'Chaman',8=>'Mage',9=>'Démoniste',10=>'Moine',11=>'Druide'
                     ];
                     $classColorsOnline = [
                         1=>'#C79C6E',2=>'#F58CBA',3=>'#ABD473',4=>'#FFF569',5=>'#FFFFFF',
-                        6=>'#C41F3B',7=>'#0070DE',8=>'#69CCF0',9=>'#9482C9',11=>'#FF7D0A'
+                        6=>'#C41F3B',7=>'#0070DE',8=>'#69CCF0',9=>'#9482C9',10=>'#00FF98',11=>'#FF7D0A'
                     ];
                     foreach ($onlineCharsList as $char):
                         $classId = (int)$char['class'];
